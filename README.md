@@ -25,9 +25,9 @@ For viewing the data stored in the database, create a MongoDB account and I will
 
 **Make sure you are in root (large-project) of your current working directory before proceeding**
 
-Frontend: `cd frontend` and then run `npm run dev`, it will show up in http://localhost:5173/
+Frontend: `cd frontend` and then run `npm run dev`
 
-Backend: `cd backend` and then run `npm run dev`, it will show up in http://localhost:5000/
+Backend: `cd backend` and then run `npm run dev`
 
 Tip: you can also check if your backend is running with http://localhost:5000/health
 
