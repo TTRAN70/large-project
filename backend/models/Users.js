@@ -9,6 +9,12 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 6,
+    },
     email: {
       type: String,
       required: true,
@@ -16,11 +22,25 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    password: {
+  //enforce arbitrary bio length
+    bio: {
       type: String,
-      required: true,
-      minlength: 6,
+      maxlength: 300
     },
+    playlist: {
+      type: [mongoose.ObjectId],
+      ref: 'Games'
+    },
+    friends: {
+      type: [mongoose.ObjectId],
+      ref: 'Users'
+    },
+  //to be implemented later (after 1st sprint)
+    /*
+    reviews: {
+      type: [mongoose.ObjectId],
+      ref: 'Reviews'
+    }, */
   },
   {
     timestamps: true,
@@ -41,4 +61,4 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("Users", userSchema);

@@ -1,9 +1,10 @@
-// EVERYTHING IN THIS BACKEND IS A SAMPLE CODE AND SHOULD BE MODIFIED TO FIT YOUR NEEDS
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+
+const Games = require("./models/Games.js");
+const Users = require("./models/Users.js");
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
+setTimeout(()=>{console.log('wait');}, 1000000);
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
@@ -39,3 +41,15 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+async function testing(){
+  //testing
+let fortnite = await Games.find({title:"Fortnite"}).exec();
+
+console.log(fortnite);
+let user = await Users.findOneAndUpdate({username:"testuser1"}, {playlist:[fortnite._id]}, {new: true}).exec();
+await Users.populate(user, {path:'playlist'});
+console.log(user);
+}
+
+testing();
