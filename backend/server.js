@@ -43,13 +43,14 @@ app.listen(PORT, () => {
 });
 
 async function testing(){
-  //testing
-let fortnite = await Games.find({title:"Fortnite"}).exec();
 
-console.log(fortnite);
-let user = await Users.findOneAndUpdate({username:"testuser1"}, {playlist:[fortnite._id]}, {new: true}).exec();
-await Users.populate(user, {path:'playlist'});
-console.log(user);
+  let fortnite = await Games.find({title:"Fortnite"}).exec();
+  const new2 = new mongoose.Types.ObjectId(fortnite._id);
+  console.log(new2);
+  let user = await Users.findOneAndUpdate({username:"testuser1"}, {playlist: [new2]}, {new: true}).exec();
+  await Users.populate(user, {path:'playlist.games'});
+  user.save();
+  console.log(user);
 }
 
 testing();

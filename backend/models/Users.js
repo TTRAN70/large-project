@@ -28,19 +28,25 @@ const userSchema = new mongoose.Schema(
       maxlength: 300
     },
     playlist: {
-      type: [mongoose.ObjectId],
-      ref: 'Games'
+      type: [{
+        type: mongoose.ObjectId,
+        ref: 'Games'
+    }]
     },
     friends: {
-      type: [mongoose.ObjectId],
-      ref: 'Users'
+      type: [{
+        type: mongoose.ObjectId,
+        ref: 'Users'
+    }]
     },
   //to be implemented later (after 1st sprint)
     /*
     reviews: {
-      type: [mongoose.ObjectId],
-      ref: 'Reviews'
-    }, */
+      type: [{
+        type: mongoose.ObjectId,
+        ref: 'Reviews'
+    }]
+    } */
   },
   {
     timestamps: true,

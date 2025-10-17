@@ -41,9 +41,11 @@ const gameSchema = new mongoose.Schema(
   //to be implemented later (after 1st sprint)
     /*
     reviews: {
-      type: [mongoose.ObjectId],
-      ref: 'Reviews'
-    }, */    
+      type: [{
+        type: mongoose.ObjectId,
+        ref: 'Reviews'
+    }]
+    } */  
   },
   {
     timestamps: false,
