@@ -43,5 +43,5 @@ jobs:
           cd /var/large-project/backend
           git pull origin main
           npm ci
-          pm2 restart server --update-env
+          pm2 restart large-project-server --update-env
           EOF
