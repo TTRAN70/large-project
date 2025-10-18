@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 export default function BouncingCat() {
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [velocity, setVelocity] = useState({ x: 3, y: 2 });
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const catSize = 300;
 
   useEffect(() => {
