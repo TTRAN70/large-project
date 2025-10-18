@@ -1,0 +1,41 @@
+name: Discord Notification on PR Opened
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d '{
+            "content": "@everyone",
+            "embeds": [{
+              "title": "Large Project PR 🐱",
+              "url": "'"${{ github.event.pull_request.html_url }}"'",
+              "color": 65388,
+              "fields": [
+                {
+                    "name": "Author",
+                    "value": "'"${{ github.event.pull_request.user.login }}"'",
+                    "inline": false
+                },
+                {
+                    "name": "PR Title",
+                    "value": "'"${{ github.event.pull_request.title }}"'",
+                    "inline": false
+                },
+                {
+                    "name": "Branch",
+                    "value": "'"${{ github.event.pull_request.head.ref }}"' → '"${{ github.event.pull_request.base.ref }}"'",
+                    "inline": false
+                }
+              ]
+            }]
+          }' \
+          $DISCORD_WEBHOOK_URL
