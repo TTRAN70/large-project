@@ -5,6 +5,11 @@ const dotenv = require("dotenv");
 
 const Games = require("./models/Games.js");
 const Users = require("./models/Users.js");
+const Reviews = require("./models/Reviews.js");
+const Refresh_tokens = require("./models/Refresh_tokens.js");
+const Email_tokens = require("./models/Email_tokens.js");
+//remove line 12 before deployment
+const test = require("./models/testing.js");
 
 dotenv.config();
 
@@ -42,15 +47,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-async function testing(){
-
-  let fortnite = await Games.find({title:"Fortnite"}).exec();
-  const new2 = new mongoose.Types.ObjectId(fortnite._id);
-  console.log(new2);
-  let user = await Users.findOneAndUpdate({username:"testuser1"}, {playlist: [new2]}, {new: true}).exec();
-  await Users.populate(user, {path:'playlist.games'});
-  user.save();
-  console.log(user);
-}
-
-testing();
+test();
