@@ -22,31 +22,42 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
+    avatar_name: {
+      type: String,
+      required: true,
+      unique: true
+    },
   //enforce arbitrary bio length
     bio: {
       type: String,
-      maxlength: 300
+      maxlength: 300,
+      default: ""
     },
     playlist: {
       type: [{
-        type: mongoose.ObjectId,
+        type: mongoose.Types.ObjectId,
         ref: 'Games'
     }]
     },
-    friends: {
+  //cannot follow the same user twice on either end of relationship
+    following: {
       type: [{
-        type: mongoose.ObjectId,
-        ref: 'Users'
+        type: mongoose.Types.ObjectId,
+        ref: 'Users',
+        unique: true
     }]
     },
-  //to be implemented later (after 1st sprint)
-    /*
-    reviews: {
+    followers: {
       type: [{
-        type: mongoose.ObjectId,
-        ref: 'Reviews'
+        type: mongoose.Types.ObjectId,
+        ref: 'Users',
+        unique: true
     }]
-    } */
+    },
   },
   {
     timestamps: true,

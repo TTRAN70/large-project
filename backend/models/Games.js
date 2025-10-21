@@ -19,6 +19,9 @@ const gameSchema = new mongoose.Schema(
       type: Number,
       min: 1948
     },
+    cover_url:{
+      type: String
+    },
     main_developer:{
       type: String
     },
@@ -37,15 +40,7 @@ const gameSchema = new mongoose.Schema(
         type: String,
         unique: true
       }]
-    },
-  //to be implemented later (after 1st sprint)
-    /*
-    reviews: {
-      type: [{
-        type: mongoose.ObjectId,
-        ref: 'Reviews'
-    }]
-    } */  
+    } 
   },
   {
     timestamps: false,
