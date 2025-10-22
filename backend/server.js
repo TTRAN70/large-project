@@ -3,11 +3,11 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 
-const Games = require("./models/Games.js");
-const Users = require("./models/Users.js");
-const Reviews = require("./models/Reviews.js");
-const Refresh_tokens = require("./models/Refresh_tokens.js");
-const Email_tokens = require("./models/Email_tokens.js");
+const Game = require("./models/Game.js");
+const User = require("./models/User.js");
+const Review = require("./models/Review.js");
+const Refresh_token = require("./models/Refresh_token.js");
+const Email_token = require("./models/Email_token.js");
 //remove line 12 before deployment
 const test = require("./models/testing.js");
 

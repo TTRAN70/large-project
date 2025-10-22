@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
-const User = require("../models/Users");
+const User = require("../models/User");
 
 // Get current user (protected route)
 router.get("/me", auth, async (req, res) => {
