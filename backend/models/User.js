@@ -28,8 +28,9 @@ const userSchema = new mongoose.Schema(
     },
     avatar_name: {
       type: String,
-      required: true,
-      unique: true
+      unique: true,
+      defualt: "" // optional, empty string if not provided
+      //required: true,
     },
   //enforce arbitrary bio length
     bio: {
@@ -44,20 +45,20 @@ const userSchema = new mongoose.Schema(
     }]
     },
   //cannot follow the same user twice on either end of relationship
-    following: {
-      type: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        unique: true
-    }]
-    },
-    followers: {
-      type: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        unique: true
-    }]
-    },
+    // following: {
+    //   type: [{
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'User'
+    //     //unique: true
+    // }]
+    // },
+    // followers: {
+    //   type: [{
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'User'
+    //     //unique: true
+    // }]
+    //},
   },
   {
     timestamps: true,
