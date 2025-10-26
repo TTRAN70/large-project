@@ -1,18 +1,29 @@
-import {
-  BrowserRouter as Router,
-  Route,
-  Navigate,
-  Routes,
-} from "react-router-dom";
-import BouncingCat from "./components/BouncingCat";
-function App() {
+// src/App.tsx
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
+import Protected from "./components/Protected";
+import Feed from "./pages/Feed";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Profile from "./pages/Profile";
+import GameDetails from "./pages/GameDetails";
+import Friends from "./pages/Friends";
+
+export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<BouncingCat />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route element={<Layout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route element={<Protected />}>
+            <Route index element={<Feed />} />
+            <Route path="/game/:id" element={<GameDetails />} />
+            <Route path="/friends" element={<Friends />} />  
+            <Route path="/profile/:username" element={<Profile />} />
+          </Route>
+        </Route>
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
-export default App;
