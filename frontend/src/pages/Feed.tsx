@@ -127,7 +127,7 @@ export default function Feed() {
                 className="mt-3 w-full rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
                 title="(Mock) Add Friend"
               >
-                Add Friend
+                Follow
               </button>
             </li>
           ))}
