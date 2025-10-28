@@ -9,6 +9,12 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 6,
+    },
     email: {
       type: String,
       required: true,
@@ -16,10 +22,41 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    password: {
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
+    avatar_name: {
       type: String,
       required: true,
-      minlength: 6,
+      unique: true
+    },
+  //enforce arbitrary bio length
+    bio: {
+      type: String,
+      maxlength: 300,
+      default: ""
+    },
+    playlist: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Game'
+    }]
+    },
+  //cannot follow the same user twice on either end of relationship
+    following: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        unique: true
+    }]
+    },
+    followers: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        unique: true
+    }]
     },
   },
   {

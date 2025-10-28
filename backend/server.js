@@ -1,9 +1,15 @@
-// EVERYTHING IN THIS BACKEND IS A SAMPLE CODE AND SHOULD BE MODIFIED TO FIT YOUR NEEDS
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+
+const Game = require("./models/Game.js");
+const User = require("./models/User.js");
+const Review = require("./models/Review.js");
+const Refresh_token = require("./models/Refresh_token.js");
+const Email_token = require("./models/Email_token.js");
+//remove line 12 before deployment
+const test = require("./models/testing.js");
 
 dotenv.config();
 
