@@ -8,10 +8,10 @@ export default function SearchToggle() {
       type="button"
       onClick={() => setMode(value)}
       className={[
-        "px-3 py-1 text-sm rounded-xl transition",
+        "px-3 py-1 text-sm font-medium rounded-xl transition-colors duration-200",
         mode === value
-          ? "bg-black text-white"
-          : "bg-gray-200/70 hover:bg-gray-300 text-gray-700",
+          ? "bg-[#1ec3ff] text-gray-900 shadow-sm"
+          : "bg-gray-800 text-gray-200 hover:bg-[#1ec3ff]/30 hover:text-white",
       ].join(" ")}
       aria-pressed={mode === value}
     >
@@ -20,7 +20,11 @@ export default function SearchToggle() {
   );
 
   return (
-    <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-gray-100" role="tablist" aria-label="Search type">
+    <div
+      className="inline-flex items-center gap-1 p-1 rounded-2xl bg-gray-900/60 backdrop-blur-sm border border-gray-700"
+      role="tablist"
+      aria-label="Search type"
+    >
       <Btn value="games" label="Games" />
       <Btn value="users" label="Users" />
     </div>

@@ -71,7 +71,7 @@ export default function UserMenu({ user }: { user: User | null }) {
             className="block rounded-lg px-3 py-2 text-sm text-[#d7f4ff] hover:bg-[#1ec3ff]/10"
             onClick={() => setOpen(false)}
           >
-            Friends
+            Followers
           </Link>
           <button
             role="menuitem"
