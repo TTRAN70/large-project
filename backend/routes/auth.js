@@ -12,8 +12,8 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const transporter = nodemailer.createTransport({
   service: "gmail", // or use host/port below
   auth: {
-    user: process.env.EMAIL_USER,   // e.g. your_email@gmail.com
-    pass: process.env.EMAIL_PASS    // Gmail App Password (not your login pw)
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
 // Register
 router.post("/register", async (req, res) => {
   try {
-    const { username, email, password, avatar_name } = req.body;
+    const { username, email, password } = req.body;
 
     // Check if user exists
     let user = await User.findOne({ $or: [{ email }, { username }] });
@@ -30,7 +30,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Create new user
-    user = new User({ username, email, password, avatar_name });
+    user = new User({ username, email, password });
     await user.save();
 
      // create email verification token
@@ -41,7 +41,7 @@ router.post("/register", async (req, res) => {
       expiresAt: new Date(Date.now() + 60 * 60 * 1000)
     });
 
-    // verification link (point to your frontend if you prefer)
+    // verification link
     const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
 	await transporter.sendMail({
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
@@ -193,7 +193,7 @@ router.post("/reset-password/:token", async (req, res) => {
       return res.status(400).json({ error: "Invalid or expired token" });
     }
 
-    user.password = req.body.password; // hashed by your pre-save hook
+    user.password = req.body.password;
     await user.save();
 
     await ResetToken.deleteOne({ _id: tokenDoc._id });
