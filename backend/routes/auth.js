@@ -5,6 +5,17 @@ const User = require("../models/User");
 const EmailToken = require("../models/Email_token");
 const ResetToken = require("../models/Reset_token"); // make sure this file exists (below)
 const nodemailer = require("nodemailer");
+const { randomBytes } = require("node:crypto");
+
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
+const transporter = nodemailer.createTransport({
+  service: "gmail", // or use host/port below
+  auth: {
+    user: process.env.EMAIL_USER,   // e.g. your_email@gmail.com
+    pass: process.env.EMAIL_PASS    // Gmail App Password (not your login pw)
+  }
+});
 
 
 // Register
@@ -23,15 +34,15 @@ router.post("/register", async (req, res) => {
     await user.save();
 
      // create email verification token
-    const etoken = crypto.randomBytes(32).toString("hex");
+    const etoken = randomBytes(32).toString("hex");
     await EmailToken.create({
       user: user._id,
-      etoken,
-      expiresAt: hourFromNow(1)
+      token: etoken,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000)
     });
 
     // verification link (point to your frontend if you prefer)
-    const verifyUrl = `${FRONTEND_URL}/verify/${token}`;
+    const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
 	await transporter.sendMail({
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -138,16 +149,16 @@ router.post("/forgot-password", async (req, res) => {
       });
     }
 
-    const token = crypto.randomBytes(32).toString("hex");
+    const etoken = randomBytes(32).toString("hex");
 
     // upsert: single active reset token per user (1h expiry)
     await ResetToken.findOneAndUpdate(
       { user: user._id },
-      { user: user._id, token, expiresAt: hourFromNow(1) },
+      { user: user._id, token: etoken, expiresAt: new Date(Date.now() + 60 * 60 * 1000)},
       { upsert: true, new: true }
     );
 
-    const resetUrl = `${FRONTEND_URL}/reset-password/${token}`;
+    const resetUrl = `${FRONTEND_URL}/reset-password/${etoken}`;
     await transporter.sendMail({
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
       to: user.email,
