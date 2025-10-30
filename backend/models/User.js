@@ -26,11 +26,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
-    avatar_name: {
-      type: String,
-      required: true,
-      unique: true
-    },
   //enforce arbitrary bio length
     bio: {
       type: String,
