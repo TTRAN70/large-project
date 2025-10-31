@@ -44,20 +44,15 @@ const userSchema = new mongoose.Schema(
     }]
     },
   //cannot follow the same user twice on either end of relationship
-    following: {
-      type: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        unique: true
-    }]
-    },
-    followers: {
-      type: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        unique: true
-    }]
-    },
+  following: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User'
+}],
+followers: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User'
+}],
+
   },
   {
     timestamps: true,
