@@ -1,4 +1,4 @@
-name: Backend CI/CD Pipeline
+name: backend-deployment
 
 on:
   push:
@@ -43,5 +43,5 @@ jobs:
           cd /var/large-project/backend
           git pull origin main
           npm ci
-          pm2 restart large-project-server --update-env
+          npm run pm2-restart
           EOF
