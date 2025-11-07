@@ -6,6 +6,10 @@ const EmailToken = require("../models/Email_token");
 const ResetToken = require("../models/Reset_token"); // make sure this file exists (below)
 const nodemailer = require("nodemailer");
 const { randomBytes } = require("node:crypto");
+const auth = require("../middleware/auth");
+const mongoose = require("mongoose");
+const Review = require("../models/Review");
+const Game = require("../models/Game");
 
 const FRONTEND_URL =
   process.env.NODE_ENV === "development"
