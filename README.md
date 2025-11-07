@@ -9,7 +9,7 @@
 
 ### Environment Variables
 
-**PLEASE READ:** Create a `.env` file in the root of the "`backend`" like [`.env.example`](/backend/.env.example).
+**PLEASE READ:** Create a `.env` file in the root of the project folder like [`.env.example`](/.env.example).
 
 Fill in these values from the .env file from our Discord or just copy/paste into the folder.
 
@@ -29,7 +29,7 @@ Frontend: `cd frontend` and then run `npm run dev`
 
 Backend: `cd backend` and then run `npm run dev`
 
-Tip: you can also check if your backend is running with http://localhost:5000/health
+Tip: you can also check if your backend is running with http://localhost:3000/health
 
 ## ✅ Testing
 
