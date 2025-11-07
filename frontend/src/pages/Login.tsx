@@ -28,7 +28,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4">
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-[rgba(30,195,255,0.35)] bg-[rgba(255,255,255,0.04)] p-6 backdrop-blur"
@@ -71,6 +71,9 @@ export default function Login() {
           Don’t have an account? <Link to="/signup" className="text-[#1ec3ff] hover:underline">Sign up</Link>
         </p>
       </form>
+        <p className="flex mt-10 justify-bottom content-end text-sm text-gray-300">
+        <Link to="/reset" className="text-[#1ec3ff] hover:underline">Forgot password?</Link>
+        </p>
     </div>
   );
 }

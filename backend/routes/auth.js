@@ -145,7 +145,7 @@ router.post("/forgot-password", async (req, res) => {
 
     // Always generic response
     if (!user) {
-      return res.json({
+      return res.status(200).json({
         message: "If an account exists, a reset link has been sent.",
       });
     }
@@ -171,7 +171,7 @@ router.post("/forgot-password", async (req, res) => {
       html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>. Link expires in 1 hour.</p>`,
     });
 
-    res.json({
+    res.status(200).json({
       message: "If an account exists, a reset link has been sent.",
     });
   } catch (err) {
@@ -212,6 +212,7 @@ router.post("/reset-password/:token", async (req, res) => {
 
 // Gets youself to follow User B.
 // To this this to work on postman: Add header Authorization | Bearer <jwtToken>
+
 router.post("/follow/:id", auth, async (req, res) => {
   try {
     const userId = req.user.id;
