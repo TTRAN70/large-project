@@ -22,7 +22,6 @@ export default function Login() {
       return;
     }
 
-
     const res = await fetch("/api/auth/login", { method: "POST", headers:{"Content-Type": "application/json"}, body: JSON.stringify({
       email: emailData,
       password: passwordData
@@ -33,6 +32,9 @@ export default function Login() {
           //todo: error handling
       }
     })
+
+  //store session locally 
+    auth.login(res.token);
   
   //send user to either initally desired page, or feed by default
     if(from == "/"){

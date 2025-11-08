@@ -1,27 +1,34 @@
 // frontend/src/lib/auth.ts
-export type User = { username: string; bio?: string };
+import { jwtDecode } from 'jwt-decode';
+export type AuthToken = { token: string , expiry: Date};
 
-const KEY = "gb_user";
+const KEY ="user_token";
 
 function notify() {
   window.dispatchEvent(new Event("auth:change"));
 }
 
 export const auth = {
-  get user(): User | null {
-    try { return JSON.parse(localStorage.getItem(KEY) || "null"); }
+  get token(): AuthToken | null {
+    try { 
+      const rawToken =  localStorage.getItem(KEY);
+      if(rawToken){
+        const token : AuthToken = JSON.parse(rawToken);
+        return jwtDecode(token.token);
+      }
+      else  
+        throw -1;}
     catch { return null; }
   },
-  login(user: User) {
-    localStorage.setItem(KEY, JSON.stringify(user));
+  login(tok: string) {
+    let expiration : Date = new Date();
+    expiration.setDate(expiration.getDate() + 1);
+    const token : AuthToken = {token : tok, expiry: expiration} 
+    localStorage.setItem(KEY, JSON.stringify(token));
     notify();
   },
-  update(partial: Partial<User>) {
-    const current = this.user;
-    if (!current) return;
-    const next = { ...current, ...partial };
-    localStorage.setItem(KEY, JSON.stringify(next));
-    notify();
+  check_if_expired() {
+    //todo
   },
   logout() {
     localStorage.removeItem(KEY);
