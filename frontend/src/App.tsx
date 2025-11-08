@@ -9,7 +9,8 @@ import Profile from "./pages/Profile";
 import GameDetails from "./pages/GameDetails";
 import Friends from "./pages/Friends";
 import Reset from "./pages/Reset";
-
+import Verify from "./pages/Verify"
+;
 export default function App() {
   return (
     <BrowserRouter>
@@ -18,8 +19,9 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset" element={<Reset />} />
+          <Route path="/verify/:verification_token" element={<Verify />} />
           <Route element={<Protected />}>
-            <Route index element={<Feed />} />
+            <Route path="/feed" index element={<Feed />} />
             <Route path="/game/:id" element={<GameDetails />} />
             <Route path="/friends" element={<Friends />} />  
             <Route path="/profile/:username" element={<Profile />} />

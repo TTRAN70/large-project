@@ -11,20 +11,36 @@ export default function Login() {
   // If user was sent here by Protected, go back there after login; else go to "/"
   const from = (location.state as any)?.from?.pathname || "/";
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const username = String(f.get("username") || "").trim();
-    const password = String(f.get("password") || "").trim();
+    const emailData = String(f.get("email") || "").trim();
+    const passwordData = String(f.get("password") || "").trim();
 
-    if (!username || !password) {
+    if (!emailData || !passwordData) {
       setError("Please enter a username and password.");
       return;
     }
 
-    // Frontend-only login (stores in localStorage + notifies header)
-    auth.login({ username });
-    nav(from, { replace: true }); // send user back to intended page
+
+    const res = await fetch("/api/auth/login", { method: "POST", headers:{"Content-Type": "application/json"}, body: JSON.stringify({
+      email: emailData,
+      password: passwordData
+    })}).then( response =>{
+      if(response.ok){
+        return response.json();
+      } else{
+          //todo: error handling
+      }
+    })
+  
+  //send user to either initally desired page, or feed by default
+    if(from == "/"){
+      nav("/feed");
+    } else{
+      nav(from, { replace: true });
+    }
+    
   }
 
   return (
@@ -43,11 +59,11 @@ export default function Login() {
         )}
 
         <label className="block space-y-1">
-          <span className="text-sm text-gray-200">Username</span>
+          <span className="text-sm text-gray-200">Email</span>
           <input
-            name="username"
+            name="email"
             className="w-full rounded-lg border border-[rgba(30,195,255,0.35)] bg-[#072335] px-3 py-2 text-white outline-none focus:ring-2 focus:ring-[rgba(30,195,255,0.45)]"
-            placeholder="player1"
+            placeholder="player1@email.domain"
             required
           />
         </label>

@@ -48,7 +48,8 @@ router.post("/register", async (req, res) => {
     });
 
     // verification link
-    const verifyUrl = `${FRONTEND_URL}/api/auth/verify/${etoken}`;
+    
+    const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
     await transporter.sendMail({
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
       to: user.email,

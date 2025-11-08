@@ -1,42 +1,48 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import { auth } from "../lib/auth"; // <- relative path (no alias)
 
 export default function Signup() {
   const nav = useNavigate();
   const [error, setError] = useState("");
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const username = String(f.get("username") || "").trim();
-    const email    = String(f.get("email") || "").trim();
-    const password = String(f.get("password") || "").trim();
+    const usernameData = String(f.get("username") || "").trim();
+    const emailData    = String(f.get("email") || "").trim();
+    const passwordData = String(f.get("password") || "").trim();
     const confirm  = String(f.get("confirm")  || "").trim();
 
-    if (!username || !email || !password || !confirm) {
+    if (!usernameData || !emailData || !passwordData || !confirm) {
       setError("Please fill out all fields.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailData)) {
       setError("Please enter a valid email address.");
       return;
     }
-    if (password.length < 6) {
+    if (passwordData.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
-    if (password !== confirm) {
+    if (passwordData !== confirm) {
       setError("Passwords do not match.");
       return;
     }
 
-    // when backend ready:
-    // await fetch("/auth/signup", { method: "POST", body: JSON.stringify({...}) });
-    // if ok: nav("/login") or auto-login from returned JWT
-    // Frontend-only: pretend signup worked
-    auth.login({ username });
-    nav("/", { replace: true });
+    const res = await fetch("/api/auth/register", { method: "POST", headers:{"Content-Type": "application/json"}, body: JSON.stringify({
+      username: usernameData,
+      email: emailData,
+      password: passwordData,
+    })}).then(response =>{
+      if(response.ok){
+        return response.json();
+      } else{
+          //todo: error handling
+      }
+    });
+    
+    nav("/login", { replace: true });
   }
 
   return (
