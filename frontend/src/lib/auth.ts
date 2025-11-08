@@ -1,5 +1,4 @@
 // frontend/src/lib/auth.ts
-import { jwtDecode } from 'jwt-decode';
 export type AuthToken = { token: string , expiry: Date};
 
 const KEY ="user_token";
@@ -11,10 +10,10 @@ function notify() {
 export const auth = {
   get token(): AuthToken | null {
     try { 
-      const rawToken =  localStorage.getItem(KEY);
+      const rawToken = localStorage.getItem(KEY);
       if(rawToken){
         const token : AuthToken = JSON.parse(rawToken);
-        return jwtDecode(token.token);
+        return token;
       }
       else  
         throw -1;}

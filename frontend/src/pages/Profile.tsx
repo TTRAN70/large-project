@@ -2,65 +2,91 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { auth } from "../lib/auth";
+import { jwtDecode } from 'jwt-decode';
 
 export default function Profile() {
   const nav = useNavigate();
-  const { username: routeUser } = useParams<{ username: string }>();
+  const { id: routeUser } = useParams<{ id: string }>();
 
-  const current = auth.user; // whoever is logged in
-  const isOwnProfile = current && routeUser === current.username;
+  const currentUserToken : any = auth.token?.token; // whoever is logged in
+  const currentUser : any = currentUserToken ? jwtDecode(currentUserToken) : null;
+  const isOwnProfile = currentUser ? (routeUser == currentUser.id) : false;
 
   // Local state mirrors current user for editing
-  const [username, setUsername] = useState(routeUser || current?.username || "");
-  const [bio, setBio] = useState(current?.bio || "");
+  const [usernameState, setUsername] = useState("");
+  const [bioState, setBio] = useState("");
   const [message, setMessage] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   // Keep fields in sync if user updates elsewhere
   useEffect(() => {
+
+    async function fetchUserData() : Promise<string>{
+      const res = (isOwnProfile) ? await fetch(`/api/profile/me`, {headers: {'Authorization': `Bearer: ${currentUserToken}`, "Content-Type": "application/json"}}).then( response => {
+        if(response.ok)
+          return response.json();
+
+        else return "no user found";
+      }) : await fetch(`/api/user/${routeUser}`, {headers: {'Authorization': `Bearer: ${currentUserToken}`, "Content-Type": "application/json"}}).then( response => {
+        if(response.ok)
+          return response.json();
+        
+        else return "no user found";
+      });
+
+      return res;
+    }
+
+    let userData : any = fetchUserData().then( rawData =>{ return rawData != "no user found" ? JSON.parse(rawData) : rawData});
+    setUsername(userData.username);
+    setBio(userData.bio);
+
     const sync = () => {
-      const u = auth.user;
-      if (!u) return;
-      setUsername(u.username);
-      setBio(u.bio || "");
+      const userEncrypted = auth.token?.token;
+      if (!userEncrypted) return;
+      else{
+        const user : any = jwtDecode(userEncrypted);
+        setUsername(user.username);
+      }
     };
     window.addEventListener("auth:change", sync);
     return () => window.removeEventListener("auth:change", sync);
   }, []);
 
+
+
   function onStartEdit() {
     // reset to latest saved values when entering edit
-    const u = auth.user;
-    setUsername(u?.username || "");
-    setBio(u?.bio || "");
+    setUsername(currentUser.username || "");
+    setBio(currentUser.bio || "");
     setIsEditing(true);
   }
 
   function onCancel() {
     // discard edits and return to view mode
-    const u = auth.user;
-    setUsername(u?.username || "");
-    setBio(u?.bio || "");
+    
+    setUsername(currentUser.username || "");
+    setBio(currentUser.bio || "");
     setIsEditing(false);
     setMessage("");
   }
 
-  function onSave(e: React.FormEvent) {
+  async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    const name = username.trim();
+    const name = usernameState.trim();
     if (!name) {
       setMessage("Username cannot be empty.");
       return;
     }
 
-    const was = auth.user?.username;
-    auth.update({ username: name, bio: bio.trim() });
-    setMessage("Profile updated ✓");
-
-    // If username changed, update the URL to the new profile path
-    if (was && was !== name) {
-      nav(`/profile/${encodeURIComponent(name)}`, { replace: true });
-    }
+    const res = await fetch(`/api/profile/edit`, {method: "POST", headers: {'Authorization': `Bearer: ${currentUserToken}`, "Content-Type": "application/json"}, body:JSON.stringify({
+      username: name,
+      bio: bioState
+    })}); 
+    if(res.ok)
+      setMessage("Profile updated ✓");
+    else
+      setMessage("Uh oh. Something went wrong :(");
 
     // briefly show message, then exit edit mode
     setTimeout(() => {
@@ -70,7 +96,7 @@ export default function Profile() {
   }
 
   function onDelete() {
-    if (!confirm("Delete your account? This will clear local data.")) return;
+    if (!confirm("Delete your account? This will clear all your data.")) return;
 
     // Clear app-local data (extend with friends keys)
     try {
@@ -129,7 +155,7 @@ export default function Profile() {
             <label className="block space-y-1">
               <span className="text-sm text-gray-200">Username</span>
               <input
-                value={username}
+                value={usernameState}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full rounded-lg border border-[rgba(30,195,255,0.35)] bg-[#072335] px-3 py-2 text-white outline-none focus:ring-2 focus:ring-[rgba(30,195,255,0.45)]"
                 placeholder="player1"
@@ -140,7 +166,7 @@ export default function Profile() {
             <label className="block space-y-1">
               <span className="text-sm text-gray-200">Bio</span>
               <textarea
-                value={bio}
+                value={bioState}
                 onChange={(e) => setBio(e.target.value)}
                 rows={4}
                 className="w-full resize-y rounded-lg border border-[rgba(30,195,255,0.35)] bg-[#072335] px-3 py-2 text-white outline-none focus:ring-2 focus:ring-[rgba(30,195,255,0.45)]"
@@ -176,12 +202,12 @@ export default function Profile() {
           <div className="max-w-xl space-y-4 rounded-2xl border border-[#1ec3ff]/30 bg-white/5 p-5 backdrop-blur">
             <div>
               <div className="text-sm text-gray-300">Username</div>
-              <div className="text-lg font-medium text-white">{username}</div>
+              <div className="text-lg font-medium text-white">{usernameState}</div>
             </div>
             <div>
               <div className="text-sm text-gray-300">Bio</div>
               <p className="text-gray-200">
-                {bio?.trim() ? bio : "No bio yet."}
+                {bioState?.trim() ? bioState : "No bio yet."}
               </p>
             </div>
           </div>
