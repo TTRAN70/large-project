@@ -8,7 +8,6 @@ export default function Reset() {
     const formData = new FormData(e.currentTarget);
     const emailData = String(formData.get("email") || "").trim();
 
-//change to BACKEND_URL for deployment
     const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         body: JSON.stringify({email: emailData})

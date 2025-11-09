@@ -4,6 +4,7 @@ import { useState } from "react";
 export default function Signup() {
   const nav = useNavigate();
   const [error, setError] = useState("");
+  const [msgState, setMsgState] = useState(true);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,23 +31,22 @@ export default function Signup() {
       return;
     }
 
-    const res = await fetch("/api/auth/register", { method: "POST", headers:{"Content-Type": "application/json"}, body: JSON.stringify({
+    await fetch("/api/auth/register", { method: "POST", headers:{"Content-Type": "application/json"}, body: JSON.stringify({
       username: usernameData,
       email: emailData,
       password: passwordData,
     })}).then(response =>{
       if(response.ok){
+        setMsgState(!msgState);
         return response.json();
       } else{
           //todo: error handling
       }
     });
-    
-    nav("/login", { replace: true });
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4">
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-[rgba(30,195,255,0.35)] bg-[rgba(255,255,255,0.04)] p-6 backdrop-blur"
@@ -122,6 +122,9 @@ export default function Signup() {
           </Link>
         </p>
       </form>
+      <p className={(msgState == true ? "hidden " : "") + "msg flex mt-10 justify-bottom content-end text-sm text-gray-300"}>
+        An account verification email was sent, please follow the sent link beofre logging in (check your junk folder). 
+      </p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 // Load environment variables at the very start
-require("dotenv").config({ path: "./.env" });
+require("dotenv").config({ path: "../.env" });
 
 const express = require("express");
 const mongoose = require("mongoose");
