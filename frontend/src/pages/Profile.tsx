@@ -2,15 +2,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { auth } from "../lib/auth";
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 
 export default function Profile() {
   const nav = useNavigate();
   const { id: routeUser } = useParams<{ id: string }>();
 
-  const currentUserToken : any = auth.token?.token; // whoever is logged in
-  const currentUser : any = currentUserToken ? jwtDecode(currentUserToken) : null;
-  const isOwnProfile = currentUser ? (routeUser == currentUser.id) : false;
+  const currentUserToken: any = auth.token?.token; // whoever is logged in
+  const currentUser: any = currentUserToken
+    ? jwtDecode(currentUserToken)
+    : null;
+  const isOwnProfile = currentUser ? routeUser == currentUser.id : false;
 
   // Local state mirrors current user for editing
   const [usernameState, setUsername] = useState("");
@@ -20,40 +22,47 @@ export default function Profile() {
 
   // Keep fields in sync if user updates elsewhere
   useEffect(() => {
-
-    async function fetchUserData() : Promise<string>{
-      const res = (isOwnProfile) ? await fetch(`/api/profile/me`, {headers: {'Authorization': `Bearer: ${currentUserToken}`, "Content-Type": "application/json"}}).then( response => {
-        if(response.ok)
-          return response.json();
-
-        else return "no user found";
-      }) : await fetch(`/api/user/${routeUser}`, {headers: {'Authorization': `Bearer: ${currentUserToken}`, "Content-Type": "application/json"}}).then( response => {
-        if(response.ok)
-          return response.json();
-        
-        else return "no user found";
-      });
+    async function fetchUserData(): Promise<string> {
+      const res = isOwnProfile
+        ? await fetch(`/api/profile/me`, {
+            headers: {
+              Authorization: `Bearer: ${currentUserToken}`,
+              "Content-Type": "application/json",
+            },
+          }).then((response) => {
+            if (response.ok) return response.json();
+            else return "no user found";
+          })
+        : await fetch(`/api/user/${routeUser}`, {
+            headers: {
+              Authorization: `Bearer: ${currentUserToken}`,
+              "Content-Type": "application/json",
+            },
+          }).then((response) => {
+            if (response.ok) return response.json();
+            else return "no user found";
+          });
 
       return res;
     }
 
-    let userData : any = fetchUserData().then( rawData =>{ return rawData != "no user found" ? JSON.parse(rawData) : rawData});
+    const userData: any = fetchUserData().then((rawData) => {
+      return rawData != "no user found" ? JSON.parse(rawData) : rawData;
+    });
     setUsername(userData.username);
     setBio(userData.bio);
 
     const sync = () => {
       const userEncrypted = auth.token?.token;
       if (!userEncrypted) return;
-      else{
-        const user : any = jwtDecode(userEncrypted);
+      else {
+        const user: any = jwtDecode(userEncrypted);
         setUsername(user.username);
       }
     };
     window.addEventListener("auth:change", sync);
     return () => window.removeEventListener("auth:change", sync);
   }, []);
-
-
 
   function onStartEdit() {
     // reset to latest saved values when entering edit
@@ -64,7 +73,7 @@ export default function Profile() {
 
   function onCancel() {
     // discard edits and return to view mode
-    
+
     setUsername(currentUser.username || "");
     setBio(currentUser.bio || "");
     setIsEditing(false);
@@ -79,14 +88,21 @@ export default function Profile() {
       return;
     }
 
-    const res = await fetch(`/api/profile/edit`, {method: "POST", headers: {'Authorization': `Bearer: ${currentUserToken}`, "Content-Type": "application/json"}, body:JSON.stringify({
-      username: name,
-      bio: bioState
-    })}); 
-    if(res.ok)
+    const res = await fetch(`/api/profile/edit`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer: ${currentUserToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: name,
+        bio: bioState,
+      }),
+    });
+    if (res.ok) {
+      auth.setUsername(name);
       setMessage("Profile updated ✓");
-    else
-      setMessage("Uh oh. Something went wrong :(");
+    } else setMessage("Uh oh. Something went wrong :(");
 
     // briefly show message, then exit edit mode
     setTimeout(() => {
@@ -101,9 +117,9 @@ export default function Profile() {
     // Clear app-local data (extend with friends keys)
     try {
       localStorage.removeItem("gb_user");
-      localStorage.removeItem("gb_want");          // want-to-play (Feed)
-      localStorage.removeItem("gb_ratings");       // ratings (Feed)
-      localStorage.removeItem("gb_friends");       // friends list (Friends page)
+      localStorage.removeItem("gb_want"); // want-to-play (Feed)
+      localStorage.removeItem("gb_ratings"); // ratings (Feed)
+      localStorage.removeItem("gb_friends"); // friends list (Friends page)
       localStorage.removeItem("gb_friend_requests"); // friend requests (Friends page)
     } catch {}
 
@@ -140,7 +156,7 @@ export default function Profile() {
         isEditing ? (
           // Edit mode
           <form
-            onSubmit={onSave}
+            onSubmit={void onSave}
             className="max-w-xl space-y-4 rounded-2xl border border-[#1ec3ff]/30 bg-white/5 p-5 backdrop-blur"
           >
             {message && (
@@ -202,7 +218,9 @@ export default function Profile() {
           <div className="max-w-xl space-y-4 rounded-2xl border border-[#1ec3ff]/30 bg-white/5 p-5 backdrop-blur">
             <div>
               <div className="text-sm text-gray-300">Username</div>
-              <div className="text-lg font-medium text-white">{usernameState}</div>
+              <div className="text-lg font-medium text-white">
+                {usernameState}
+              </div>
             </div>
             <div>
               <div className="text-sm text-gray-300">Bio</div>

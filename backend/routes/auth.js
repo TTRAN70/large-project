@@ -48,7 +48,7 @@ router.post("/register", async (req, res) => {
     });
 
     // verification link
-    
+
     const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
     await transporter.sendMail({
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
@@ -134,7 +134,7 @@ router.get("/verify/:token", async (req, res) => {
     await User.findByIdAndUpdate(tokenDoc.user, { $set: { isVerified: true } });
     await EmailToken.deleteOne({ _id: tokenDoc._id });
 
-    res.json({ message: "Email verified successfully!" });
+    res.status(200).json({ message: "Email verified successfully!" });
   } catch (err) {
     console.error("Verify email error:", err);
     res.status(500).json({ error: "Server error" });

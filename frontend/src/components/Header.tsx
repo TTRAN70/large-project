@@ -5,16 +5,16 @@ import { useEffect, useState } from "react";
 import UserMenu from "./UserMenu";
 
 export default function Header() {
-  const [user, setUser] = useState(auth.user);
+  const [user, setUser] = useState(auth.username);
   const loc = useLocation();
 
   useEffect(() => {
     // Update on route changes
-    setUser(auth.user);
+    setUser(auth.username);
   }, [loc.key]);
 
   useEffect(() => {
-    const onAuthChange = () => setUser(auth.user);
+    const onAuthChange = () => setUser(auth.username);
     // our custom event (same-tab)
     window.addEventListener("auth:change", onAuthChange);
     // storage event (other tabs)
@@ -28,7 +28,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-[rgba(30,195,255,0.35)] bg-[rgba(0,18,30,0.8)] backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-        <Link to="/" className="font-bold text-xl tracking-tight text-[#1ec3ff]">
+        <Link
+          to="/"
+          className="text-xl font-bold tracking-tight text-[#1ec3ff]"
+        >
           GameBox
         </Link>
         <div className="flex-1" />

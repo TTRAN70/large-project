@@ -1,18 +1,17 @@
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 
 export default function Signup() {
-  const nav = useNavigate();
   const [error, setError] = useState("");
   const [msgState, setMsgState] = useState(true);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const usernameData = String(f.get("username") || "").trim();
-    const emailData    = String(f.get("email") || "").trim();
+    const emailData = String(f.get("email") || "").trim();
     const passwordData = String(f.get("password") || "").trim();
-    const confirm  = String(f.get("confirm")  || "").trim();
+    const confirm = String(f.get("confirm") || "").trim();
 
     if (!usernameData || !emailData || !passwordData || !confirm) {
       setError("Please fill out all fields.");
@@ -31,24 +30,28 @@ export default function Signup() {
       return;
     }
 
-    await fetch("/api/auth/register", { method: "POST", headers:{"Content-Type": "application/json"}, body: JSON.stringify({
-      username: usernameData,
-      email: emailData,
-      password: passwordData,
-    })}).then(response =>{
-      if(response.ok){
+    await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: usernameData,
+        email: emailData,
+        password: passwordData,
+      }),
+    }).then((response) => {
+      if (response.ok) {
         setMsgState(!msgState);
         return response.json();
-      } else{
-          //todo: error handling
+      } else {
+        //todo: error handling
       }
     });
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4">
+    <div className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center px-4">
       <form
-        onSubmit={onSubmit}
+        onSubmit={void onSubmit}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-[rgba(30,195,255,0.35)] bg-[rgba(255,255,255,0.04)] p-6 backdrop-blur"
         aria-labelledby="signup-title"
       >
@@ -122,8 +125,14 @@ export default function Signup() {
           </Link>
         </p>
       </form>
-      <p className={(msgState == true ? "hidden " : "") + "msg flex mt-10 justify-bottom content-end text-sm text-gray-300"}>
-        An account verification email was sent, please follow the sent link beofre logging in (check your junk folder). 
+      <p
+        className={
+          (msgState == true ? "hidden " : "") +
+          "msg justify-bottom mt-10 flex content-end text-sm text-gray-300"
+        }
+      >
+        An account verification email was sent, please follow the sent link
+        before logging in (check your junk folder).
       </p>
     </div>
   );

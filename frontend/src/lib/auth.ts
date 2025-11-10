@@ -1,7 +1,8 @@
 // frontend/src/lib/auth.ts
-export type AuthToken = { token: string , expiry: Date};
+export type AuthToken = { token: string; expiry: Date };
 
-const KEY ="user_token";
+const KEY = "user_token";
+const USERNAME = "";
 
 function notify() {
   window.dispatchEvent(new Event("auth:change"));
@@ -9,21 +10,35 @@ function notify() {
 
 export const auth = {
   get token(): AuthToken | null {
-    try { 
+    try {
       const rawToken = localStorage.getItem(KEY);
-      if(rawToken){
-        const token : AuthToken = JSON.parse(rawToken);
+      if (rawToken) {
+        const token: AuthToken = JSON.parse(rawToken);
         return token;
-      }
-      else  
-        throw -1;}
-    catch { return null; }
+      } else throw -1;
+    } catch {
+      return null;
+    }
   },
-  login(tok: string) {
-    let expiration : Date = new Date();
+  get username(): string {
+    try {
+      const username = localStorage.getItem(USERNAME);
+      if (username) {
+        return username;
+      } else return "";
+    } catch {
+      return "";
+    }
+  },
+  setUsername(username: string) {
+    localStorage.setItem(USERNAME, username);
+  },
+  login(tok: string, username: string) {
+    const expiration: Date = new Date();
     expiration.setDate(expiration.getDate() + 1);
-    const token : AuthToken = {token : tok, expiry: expiration} 
+    const token: AuthToken = { token: tok, expiry: expiration };
     localStorage.setItem(KEY, JSON.stringify(token));
+    localStorage.setItem(USERNAME, username);
     notify();
   },
   check_if_expired() {
@@ -31,6 +46,7 @@ export const auth = {
   },
   logout() {
     localStorage.removeItem(KEY);
+    localStorage.removeItem(USERNAME);
     notify();
   },
 };
