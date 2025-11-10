@@ -48,8 +48,7 @@ router.post("/register", async (req, res) => {
     });
 
     // verification link
-
-    const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
+    const verifyUrl = `${FRONTEND_URL}/api/auth/verify/${etoken}`;
     await transporter.sendMail({
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -134,7 +133,7 @@ router.get("/verify/:token", async (req, res) => {
     await User.findByIdAndUpdate(tokenDoc.user, { $set: { isVerified: true } });
     await EmailToken.deleteOne({ _id: tokenDoc._id });
 
-    res.status(200).json({ message: "Email verified successfully!" });
+    res.json({ message: "Email verified successfully!" });
   } catch (err) {
     console.error("Verify email error:", err);
     res.status(500).json({ error: "Server error" });
@@ -150,7 +149,7 @@ router.post("/forgot-password", async (req, res) => {
 
     // Always generic response
     if (!user) {
-      return res.status(200).json({
+      return res.json({
         message: "If an account exists, a reset link has been sent.",
       });
     }
@@ -176,7 +175,7 @@ router.post("/forgot-password", async (req, res) => {
       html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>. Link expires in 1 hour.</p>`,
     });
 
-    res.status(200).json({
+    res.json({
       message: "If an account exists, a reset link has been sent.",
     });
   } catch (err) {
@@ -217,7 +216,6 @@ router.post("/reset-password/:token", async (req, res) => {
 
 // Gets youself to follow User B.
 // To this this to work on postman: Add header Authorization | Bearer <jwtToken>
-
 router.post("/follow/:id", auth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -357,33 +355,37 @@ router.post("/profile/edit", auth, async (req, res) => {
   }
 });
 
-// delete your own profile ( haven't tested yet, no errors do)
+// delete your own profile 
 // get jwt token from login enpoint
 // On postman: Add header Authorization | Bearer <jwtToken>
 router.post("/profile/delete", auth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Find user
+    // Find the user
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "Account does not exist" });
 
-    // Remove this user from other users' followers/following arrays
-    await User.updateMany(
-      { followers: userId },
-      { $pull: { followers: userId } }
-    );
-    await User.updateMany(
-      { following: userId },
-      { $pull: { following: userId } }
-    );
+    // Remove user from others' followers/following lists
+    await User.updateMany({ followers: userId }, { $pull: { followers: userId } });
+    await User.updateMany({ following: userId }, { $pull: { following: userId } });
 
-    // Delete the user
+    // Delete all of this user's reviews
+    await Review.deleteMany({ user: userId });
+
+    // Delete any refresh, email, or reset tokens linked to this user
+    await Refresh_token.deleteMany({ user: userId });
+    await Email_token.deleteMany({ user: userId });
+    await Reset_token.deleteMany({ user: userId });
+
+    // Finally, delete the user document itself
     await User.findByIdAndDelete(userId);
 
-    res.status(200).json({ message: "Your account has been deleted" });
+    // Respond with confirmation
+    res.status(200).json({ message: "Your account and related data have been deleted" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error deleting profile:", error);
+    res.status(500).json({ error: "Server error while deleting profile" });
   }
 });
 
@@ -604,7 +606,7 @@ router.delete("/watch/:id", auth, async (req, res) => {
 // make a review for a game
 // get jwt token from login enpoint
 // On postman: Add header Authorization | Bearer <jwtToken>
-router.post("/review/create", auth, async (req, res) => {
+router.post("/review", auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const { gameId, rating, body } = req.body;
@@ -690,6 +692,86 @@ router.delete("/review/:id", auth, async (req, res) => {
     res.json({ message: "Review deleted successfully" });
   } catch (error) {
     console.error("Error deleting review:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// PUT update a review by ID
+// Requires auth and ownership
+router.put("/review/:id", auth, async (req, res) => {
+  try {
+    const reviewId = req.params.id;
+    const userId = req.user.id;
+    const { rating, body } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ error: "Invalid review ID" });
+    }
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+
+    // Check ownership
+    if (review.user.toString() !== userId) {
+      return res.status(403).json({ error: "You are not allowed to update this review" });
+    }
+
+    // Validate fields if provided
+    if (rating !== undefined) {
+      if (typeof rating !== "number" || rating < 0 || rating > 10) {
+        return res.status(400).json({ error: "Rating must be a number between 0 and 10" });
+      }
+      review.rating = rating;
+    }
+
+    if (body !== undefined) {
+      if (body.length > 1000) {
+        return res.status(400).json({ error: "Review body cannot exceed 1000 characters" });
+      }
+      review.body = body;
+    }
+
+    await review.save();
+
+    res.json({ message: "Review updated successfully", review });
+  } catch (error) {
+    console.error("Error updating review:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Get a review by its ID
+router.get("/review/:id", async (req, res) => {
+  try {
+    const reviewId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ error: "Invalid review ID" });
+    }
+
+    // get the reviewer's username // get the game title
+    const review = await Review.findById(reviewId)
+      .populate("user", "username")
+      .populate("game", "title") 
+      .lean();
+
+    if (!review) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+
+    res.json({
+      id: review._id,
+      user: review.user.username,
+      game: review.game.title,
+      rating: review.rating,
+      body: review.body,
+      createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
+    });
+  } catch (error) {
+    console.error("Error fetching review:", error.message);
     res.status(500).json({ error: "Server error" });
   }
 });
