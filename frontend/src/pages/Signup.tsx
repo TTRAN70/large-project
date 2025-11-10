@@ -1,46 +1,52 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import { auth } from "../lib/auth"; // <- relative path (no alias)
 
 export default function Signup() {
   const nav = useNavigate();
   const [error, setError] = useState("");
+  const [msgState, setMsgState] = useState(true);
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const username = String(f.get("username") || "").trim();
-    const email    = String(f.get("email") || "").trim();
-    const password = String(f.get("password") || "").trim();
+    const usernameData = String(f.get("username") || "").trim();
+    const emailData    = String(f.get("email") || "").trim();
+    const passwordData = String(f.get("password") || "").trim();
     const confirm  = String(f.get("confirm")  || "").trim();
 
-    if (!username || !email || !password || !confirm) {
+    if (!usernameData || !emailData || !passwordData || !confirm) {
       setError("Please fill out all fields.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailData)) {
       setError("Please enter a valid email address.");
       return;
     }
-    if (password.length < 6) {
+    if (passwordData.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
-    if (password !== confirm) {
+    if (passwordData !== confirm) {
       setError("Passwords do not match.");
       return;
     }
 
-    // when backend ready:
-    // await fetch("/auth/signup", { method: "POST", body: JSON.stringify({...}) });
-    // if ok: nav("/login") or auto-login from returned JWT
-    // Frontend-only: pretend signup worked
-    auth.login({ username });
-    nav("/", { replace: true });
+    await fetch("/api/auth/register", { method: "POST", headers:{"Content-Type": "application/json"}, body: JSON.stringify({
+      username: usernameData,
+      email: emailData,
+      password: passwordData,
+    })}).then(response =>{
+      if(response.ok){
+        setMsgState(!msgState);
+        return response.json();
+      } else{
+          //todo: error handling
+      }
+    });
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4">
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-[rgba(30,195,255,0.35)] bg-[rgba(255,255,255,0.04)] p-6 backdrop-blur"
@@ -116,6 +122,9 @@ export default function Signup() {
           </Link>
         </p>
       </form>
+      <p className={(msgState == true ? "hidden " : "") + "msg flex mt-10 justify-bottom content-end text-sm text-gray-300"}>
+        An account verification email was sent, please follow the sent link beofre logging in (check your junk folder). 
+      </p>
     </div>
   );
 }

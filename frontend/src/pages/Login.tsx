@@ -11,24 +11,42 @@ export default function Login() {
   // If user was sent here by Protected, go back there after login; else go to "/"
   const from = (location.state as any)?.from?.pathname || "/";
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const username = String(f.get("username") || "").trim();
-    const password = String(f.get("password") || "").trim();
+    const emailData = String(f.get("email") || "").trim();
+    const passwordData = String(f.get("password") || "").trim();
 
-    if (!username || !password) {
+    if (!emailData || !passwordData) {
       setError("Please enter a username and password.");
       return;
     }
 
-    // Frontend-only login (stores in localStorage + notifies header)
-    auth.login({ username });
-    nav(from, { replace: true }); // send user back to intended page
+    const res = await fetch("/api/auth/login", { method: "POST", headers:{"Content-Type": "application/json"}, body: JSON.stringify({
+      email: emailData,
+      password: passwordData
+    })}).then( response =>{
+      if(response.ok){
+        return response.json();
+      } else{
+          //todo: error handling
+      }
+    })
+
+  //store session locally 
+    auth.login(res.token);
+  
+  //send user to either initally desired page, or feed by default
+    if(from == "/"){
+      nav("/feed");
+    } else{
+      nav(from, { replace: true });
+    }
+    
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4">
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-[rgba(30,195,255,0.35)] bg-[rgba(255,255,255,0.04)] p-6 backdrop-blur"
@@ -43,11 +61,11 @@ export default function Login() {
         )}
 
         <label className="block space-y-1">
-          <span className="text-sm text-gray-200">Username</span>
+          <span className="text-sm text-gray-200">Email</span>
           <input
-            name="username"
+            name="email"
             className="w-full rounded-lg border border-[rgba(30,195,255,0.35)] bg-[#072335] px-3 py-2 text-white outline-none focus:ring-2 focus:ring-[rgba(30,195,255,0.45)]"
-            placeholder="player1"
+            placeholder="player1@email.domain"
             required
           />
         </label>
@@ -71,6 +89,9 @@ export default function Login() {
           Don’t have an account? <Link to="/signup" className="text-[#1ec3ff] hover:underline">Sign up</Link>
         </p>
       </form>
+        <p className="flex mt-10 justify-bottom content-end text-sm text-gray-300">
+        <Link to="/reset" className="text-[#1ec3ff] hover:underline">Forgot password?</Link>
+        </p>
     </div>
   );
 }

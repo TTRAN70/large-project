@@ -38,7 +38,6 @@ const userSchema = new mongoose.Schema(
         ref: 'Game'
     }]
     },
-  //cannot follow the same user twice on either end of relationship
   following: [{
   type: mongoose.Schema.Types.ObjectId,
   ref: 'User'

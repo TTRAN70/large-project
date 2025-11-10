@@ -10,8 +10,7 @@ const User = require("./models/User.js");
 const Review = require("./models/Review.js");
 const Refresh_token = require("./models/Refresh_token.js");
 const Email_token = require("./models/Email_token.js");
-//remove line 12 before deployment
-const test = require("./models/testing.js");
+
 
 const app = express();
 // Middleware
