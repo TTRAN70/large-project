@@ -48,7 +48,7 @@ router.post("/register", async (req, res) => {
     });
 
     // verification link
-    const verifyUrl = `${FRONTEND_URL}/api/auth/verify/${etoken}`;
+    const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
     await transporter.sendMail({
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -133,7 +133,7 @@ router.get("/verify/:token", async (req, res) => {
     await User.findByIdAndUpdate(tokenDoc.user, { $set: { isVerified: true } });
     await EmailToken.deleteOne({ _id: tokenDoc._id });
 
-    res.json({ message: "Email verified successfully!" });
+    res.status(200).json({ message: "Email verified successfully!" });
   } catch (err) {
     console.error("Verify email error:", err);
     res.status(500).json({ error: "Server error" });
@@ -149,7 +149,7 @@ router.post("/forgot-password", async (req, res) => {
 
     // Always generic response
     if (!user) {
-      return res.json({
+      return res.status(200).json({
         message: "If an account exists, a reset link has been sent.",
       });
     }
@@ -167,7 +167,7 @@ router.post("/forgot-password", async (req, res) => {
       { upsert: true, new: true }
     );
 
-    const resetUrl = `${FRONTEND_URL}/api/auth/reset-password/${etoken}`;
+    const resetUrl = `${FRONTEND_URL}/reset-password/${etoken}`;
     await transporter.sendMail({
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -175,7 +175,7 @@ router.post("/forgot-password", async (req, res) => {
       html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>. Link expires in 1 hour.</p>`,
     });
 
-    res.json({
+    res.status(200).json({
       message: "If an account exists, a reset link has been sent.",
     });
   } catch (err) {
@@ -207,7 +207,7 @@ router.post("/reset-password/:token", async (req, res) => {
 
     await ResetToken.deleteOne({ _id: tokenDoc._id });
 
-    res.json({ message: "Password reset successfully." });
+    res.json({ message: "Password reset was successful." });
   } catch (err) {
     console.error("Reset password error:", err);
     res.status(500).json({ error: "Server error" });
@@ -355,7 +355,7 @@ router.post("/profile/edit", auth, async (req, res) => {
   }
 });
 
-// delete your own profile 
+// delete your own profile
 // get jwt token from login enpoint
 // On postman: Add header Authorization | Bearer <jwtToken>
 router.post("/profile/delete", auth, async (req, res) => {
@@ -367,8 +367,14 @@ router.post("/profile/delete", auth, async (req, res) => {
     if (!user) return res.status(404).json({ error: "Account does not exist" });
 
     // Remove user from others' followers/following lists
-    await User.updateMany({ followers: userId }, { $pull: { followers: userId } });
-    await User.updateMany({ following: userId }, { $pull: { following: userId } });
+    await User.updateMany(
+      { followers: userId },
+      { $pull: { followers: userId } }
+    );
+    await User.updateMany(
+      { following: userId },
+      { $pull: { following: userId } }
+    );
 
     // Delete all of this user's reviews
     await Review.deleteMany({ user: userId });
@@ -382,7 +388,9 @@ router.post("/profile/delete", auth, async (req, res) => {
     await User.findByIdAndDelete(userId);
 
     // Respond with confirmation
-    res.status(200).json({ message: "Your account and related data have been deleted" });
+    res
+      .status(200)
+      .json({ message: "Your account and related data have been deleted" });
   } catch (error) {
     console.error("Error deleting profile:", error);
     res.status(500).json({ error: "Server error while deleting profile" });
@@ -715,20 +723,26 @@ router.put("/review/:id", auth, async (req, res) => {
 
     // Check ownership
     if (review.user.toString() !== userId) {
-      return res.status(403).json({ error: "You are not allowed to update this review" });
+      return res
+        .status(403)
+        .json({ error: "You are not allowed to update this review" });
     }
 
     // Validate fields if provided
     if (rating !== undefined) {
       if (typeof rating !== "number" || rating < 0 || rating > 10) {
-        return res.status(400).json({ error: "Rating must be a number between 0 and 10" });
+        return res
+          .status(400)
+          .json({ error: "Rating must be a number between 0 and 10" });
       }
       review.rating = rating;
     }
 
     if (body !== undefined) {
       if (body.length > 1000) {
-        return res.status(400).json({ error: "Review body cannot exceed 1000 characters" });
+        return res
+          .status(400)
+          .json({ error: "Review body cannot exceed 1000 characters" });
       }
       review.body = body;
     }
@@ -754,7 +768,7 @@ router.get("/review/:id", async (req, res) => {
     // get the reviewer's username // get the game title
     const review = await Review.findById(reviewId)
       .populate("user", "username")
-      .populate("game", "title") 
+      .populate("game", "title")
       .lean();
 
     if (!review) {
