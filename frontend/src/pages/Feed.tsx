@@ -1,7 +1,7 @@
 // src/pages/Feed.tsx
 import { useEffect, useMemo, useState } from "react";
 import GameCard from "../components/GameCard";
-import { GAMES, type Game } from "../data/games";
+import { type Game } from "../data/games";
 import { useSearchMode } from "../lib/searchMode";
 import SearchToggle from "../components/SearchToggle";
 import { mockUsers } from "../data/users";
@@ -12,6 +12,10 @@ const RATE_KEY = "gb_ratings";
 
 export default function Feed() {
   const { mode } = useSearchMode();
+
+  const [gamesData, setGamesData] = useState<Game []>([]);
+
+  const [searchTerm, setSearchTerm] = useState(".*");
 
   // persistent wantlist & ratings (for Games mode)
   const [want, setWant] = useState<Record<string, boolean>>(() => {
@@ -25,6 +29,35 @@ export default function Feed() {
   const [tab, setTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
 
+
+  async function queryGames(searchString : string){
+    const response = await fetch(`/api/auth/game?title=${searchString}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+
+    setGamesData([...response]);
+    return;
+  }
+
+  useEffect(() => {
+    if(mode === "games"){
+      queryGames(searchTerm);
+    } else if(mode === "users"){
+
+    } else return;
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if(q == "")
+      setSearchTerm(".*");
+    else
+      setSearchTerm(q.trim().toLowerCase());
+  }, [q]);
+
   useEffect(() => { localStorage.setItem(WANT_KEY, JSON.stringify(want)); }, [want]);
   useEffect(() => { localStorage.setItem(RATE_KEY, JSON.stringify(ratings)); }, [ratings]);
 
@@ -34,8 +67,8 @@ export default function Feed() {
   const ql = q.trim().toLowerCase();
 
   // ---- Games view ----
-  const filteredGames: Game[] = useMemo(() => {
-    let list = GAMES;
+  /*const filteredGames: Game[] = useMemo(() => {
+    let list = [];
     if (ql) {
       list = list.filter(
         (g) =>
@@ -44,11 +77,11 @@ export default function Feed() {
           String(g.year).includes(ql)
       );
     }
-    if (tab === "want")  list = list.filter((g) => want[g.id]);
-    if (tab === "rated") list = list.filter((g) => (ratings[g.id] || 0) > 0);
+    if (tab === "want")  list = list.filter((g : Game) => want[g._id]);
+    if (tab === "rated") list = list.filter((g : Game) => (ratings[g._id] || 0) > 0);
     return list;
   }, [ql, tab, want, ratings]);
-
+*/
   // ---- Users view ----
   const filteredUsers = useMemo(() => {
     if (!ql) return mockUsers;
@@ -93,18 +126,18 @@ export default function Feed() {
 
       {/* Content */}
       {mode === "games" ? (
-        filteredGames.length === 0 ? (
+        gamesData.length === 0 ? (
           <p className="rounded-xl border border-[#1ec3ff]/20 bg-[#061a27]/70 p-7 text-center text-[#a7e9ff]">
             No games match your filters.
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredGames.map((g) => (
+            {gamesData.map((g) => (
               <GameCard
-                key={g.id}
+                key={g._id}
                 game={g}
-                want={!!want[g.id]}
-                rating={ratings[g.id] || 0}
+                want={!!want[g._id]}
+                rating={ratings[g._id] || 0}
                 onToggleWant={toggleWant}
                 onRate={rate}
               />

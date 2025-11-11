@@ -24,7 +24,7 @@ export default function App() {
           <Route path="/verify/:verification_token" element={<Verify />} />
           <Route element={<Protected />}>
             <Route path="/feed" index element={<Feed />} />
-            <Route path="/game/:id" element={<GameDetails />} />
+            <Route path="/game/:title" element={<GameDetails />} />
             <Route path="/friends" element={<Friends />} />  
             <Route path="/profile/:id" element={<Profile />} />
           </Route>

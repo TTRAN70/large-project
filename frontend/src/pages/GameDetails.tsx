@@ -1,32 +1,66 @@
-import * as React from "react";
+import {useEffect, useState} from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import * as gamesData from "../data/games";
-
-type Game = {
-  id: string;
-  title: string;
-  year: number;
-  genre: string;
-  cover: string;
-  accent?: string;
-};
+import { type Game } from "../data/games.ts"
 
 const WANT_KEY = "gb_want";
 const RATE_KEY = "gb_ratings";
 
-const ALL_GAMES: Game[] =
-  ((gamesData as any).GAMES as Game[]) ??
-  ((gamesData as any).games as Game[]) ??
-  [];
 
 export default function GameDetails() {
-  const { id = "" } = useParams<{ id: string }>();
+  const { title } = useParams<{ title: string }>();
   const nav = useNavigate();
+  const [game, setGame] = useState<Game | null>(null);
 
-  const game = React.useMemo<Game | null>(
-    () => ALL_GAMES.find((g) => g.id === id) ?? null,
-    [id]
-  );
+  async function queryGame(){
+     const res : Game[] = await fetch (`/api/auth/game?title=${title}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+    
+    setGame(res[0]);
+  }
+
+  useEffect(() => {
+    queryGame();
+  }, []);
+
+  const gid = game ? game._id : 0;
+
+  // localStorage state
+  const [want, setWant] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(WANT_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const [ratings, setRatings] = useState<Record<string, number>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(RATE_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(WANT_KEY, JSON.stringify(want));
+  }, [want]);
+  useEffect(() => {
+    localStorage.setItem(RATE_KEY, JSON.stringify(ratings));
+  }, [ratings]);
+
+  const rating = ratings[gid] || 0;
+
+  function toggleWant() {
+    setWant((w) => ({ ...w, [gid]: !w[gid] }));
+  }
+  function rate(n: number) {
+    setRatings((r) => ({ ...r, [gid]: n }));
+  }
+  
 
   if (!game) {
     return (
@@ -45,40 +79,6 @@ export default function GameDetails() {
     );
   }
 
-  const gid = game.id;
-
-  // localStorage state
-  const [want, setWant] = React.useState<Record<string, boolean>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(WANT_KEY) || "{}");
-    } catch {
-      return {};
-    }
-  });
-  const [ratings, setRatings] = React.useState<Record<string, number>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(RATE_KEY) || "{}");
-    } catch {
-      return {};
-    }
-  });
-
-  React.useEffect(() => {
-    localStorage.setItem(WANT_KEY, JSON.stringify(want));
-  }, [want]);
-  React.useEffect(() => {
-    localStorage.setItem(RATE_KEY, JSON.stringify(ratings));
-  }, [ratings]);
-
-  const rating = ratings[gid] || 0;
-
-  function toggleWant() {
-    setWant((w) => ({ ...w, [gid]: !w[gid] }));
-  }
-  function rate(n: number) {
-    setRatings((r) => ({ ...r, [gid]: n }));
-  }
-
   return (
     <section className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[340px,1fr]">
       <button
@@ -90,16 +90,17 @@ export default function GameDetails() {
 
       {/* Cover (bigger) */}
       <div className="overflow-hidden rounded-2xl border border-[rgba(30,195,255,0.25)] bg-[rgba(8,25,38,0.6)]">
-        <img src={game.cover} alt={game.title} className="w-full object-cover" />
+        <img src={game.cover_url} alt={game.title} className="w-full h-full object-cover" />
       </div>
 
       {/* Details (bigger fonts + spacing) */}
       <div className="space-y-5 rounded-2xl border border-[#1ec3ff]/25 bg-white/5 p-6">
         <header className="space-y-2">
-          <h1 className="text-3xl font-semibold text-white">{game.title}</h1>
+          <h1 className="text-3xl font-bold text-white">{game.title} ({game.release_year})</h1>
           <div className="flex items-center gap-3 text-base text-[#a7e9ff]">
-            <span>{game.year}</span>
-            <span className="rounded bg-[#1ec3ff]/15 px-2.5 py-1">{game.genre}</span>
+            {game.genres.map( el => (
+              <span key={1} className="rounded bg-[#1ec3ff]/15 px-2.5 py-1"> {el}</span>
+            ))}
           </div>
         </header>
 
@@ -125,10 +126,23 @@ export default function GameDetails() {
 
         <section className="space-y-2">
           <h2 className="text-xl font-medium text-white">About</h2>
-          <p className="text-gray-300">
-            This is a mock details page. Later we’ll fetch a description, platforms,
-            screenshots, and community reviews from the backend / API.
+          <p className="font-semibold text-gray-300">
+            Developed By: {game.main_developer}
           </p>
+          <p className="font-semibold text-gray-300">
+            Published By: {game.publisher}
+          </p>
+          <p className="text-gray-300">
+            {game.description}
+          </p>
+          <p className="font-semibold text-gray-300">
+            Platforms:
+          </p>
+          <ul className="flex flex-row">
+            {game.platforms.map( el => (
+              <li key={1} className="text-gray-300 px-1"> {el} </li>
+            ))}
+          </ul>
         </section>
       </div>
     </section>

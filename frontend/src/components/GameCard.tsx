@@ -1,7 +1,7 @@
 // src/components/GameCard.tsx
-import type { Game } from "../data/games";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { type Game } from "../data/games";
 
 type Props = {
   game: Game;
@@ -20,21 +20,22 @@ export default function GameCard({
 }: Props) {
   const [imgOk, setImgOk] = useState(true);
 
+  const accent = "#a78bfa";
   return (
     <article
       className="group relative overflow-hidden rounded-2xl border border-[rgba(30,195,255,0.25)] bg-[rgba(8,25,38,0.6)] shadow transition-shadow hover:shadow-lg"
       style={{
-        boxShadow: game.accent
-          ? `0 0 0 1px ${game.accent}22, 0 10px 30px ${game.accent}22`
+        boxShadow: accent
+          ? `0 0 0 1px ${accent}22, 0 10px 30px ${accent}22`
           : undefined,
       }}
     >
       {/* Cover (clickable) */}
-      <Link to={`/game/${encodeURIComponent(game.id)}`} className="block">
+      <Link to={`/game/${encodeURIComponent(game.title)}`} className="block">
         <div className="aspect-[10/12] w-full overflow-hidden">
           {imgOk ? (
             <img
-              src={game.cover}
+              src={game.cover_url}
               alt={game.title}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               onError={() => setImgOk(false)}
@@ -48,12 +49,12 @@ export default function GameCard({
       </Link>
 
       {/* Accent corner */}
-      {game.accent && (
+      {accent && (
         <span
           aria-hidden
           className="absolute right-0 top-0 h-10 w-10"
           style={{
-            background: `linear-gradient(135deg, transparent 50%, ${game.accent} 50%)`,
+            background: `linear-gradient(135deg, transparent 50%, ${accent} 50%)`,
           }}
         />
       )}
@@ -63,7 +64,7 @@ export default function GameCard({
         {/* Title (clickable) */}
         <h3 className="line-clamp-1 text-[1.1rem] font-semibold text-white">
           <Link
-            to={`/game/${encodeURIComponent(game.id)}`}
+            to={`/game/${encodeURIComponent(game.title)}`}
             className="hover:underline"
           >
             {game.title}
@@ -72,9 +73,9 @@ export default function GameCard({
 
         {/* Meta */}
         <div className="flex items-center gap-3 text-sm text-[#a7e9ff]">
-          <span>{game.year}</span>
+          <span>{game.release_year}</span>
           <span className="rounded bg-[#1ec3ff]/15 px-2 py-0.5 text-[#a7e9ff]">
-            {game.genre}
+            {game.genres[0]}
           </span>
         </div>
 
@@ -93,7 +94,7 @@ export default function GameCard({
             const onStarClick = (e: React.MouseEvent<HTMLButtonElement>) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const leftHalf = e.clientX - rect.left < rect.width / 2;
-              onRate(game.id, leftHalf ? halfValue : fullValue);
+              onRate(game._id, leftHalf ? halfValue : fullValue);
             };
 
             return (
@@ -144,7 +145,7 @@ export default function GameCard({
         {/* CTA */}
         <div className="pt-3">
           <button
-            onClick={() => onToggleWant(game.id)}
+            onClick={() => onToggleWant(game._id)}
             className={`w-full rounded-lg border px-4 py-2 text-sm transition-colors ${
               want
                 ? "border-emerald-400/50 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25"
