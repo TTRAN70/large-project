@@ -1,10 +1,12 @@
 // src/pages/Feed.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import GameCard from "../components/GameCard";
 import { type Game } from "../data/games";
 import { useSearchMode } from "../lib/searchMode";
 import SearchToggle from "../components/SearchToggle";
-import { mockUsers } from "../data/users";
+import { type User } from "../data/users";
+import { auth } from "../lib/auth";
 
 type Tab = "all" | "want" | "rated";
 const WANT_KEY = "gb_want";
@@ -12,8 +14,10 @@ const RATE_KEY = "gb_ratings";
 
 export default function Feed() {
   const { mode } = useSearchMode();
-
+  const [user, setUser] = useState<User | null>();
   const [gamesData, setGamesData] = useState<Game []>([]);
+  const [usersData, setUsersData] = useState<User []>([]);
+  const currentUserToken = auth.token?.token;
 
   const [searchTerm, setSearchTerm] = useState(".*");
 
@@ -30,6 +34,23 @@ export default function Feed() {
   const [q, setQ] = useState("");
 
 
+  async function queryUser(){
+    const res = await fetch(`/api/auth/profile/me`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${currentUserToken}`,
+              "Content-Type": "application/json",
+            },
+          }).then((response) => {
+            if(response.ok){
+              return response.json();
+            } 
+            else return "no user found";
+          });
+
+    setUser(res);
+  }
+
   async function queryGames(searchString : string){
     const response = await fetch(`/api/auth/game?title=${searchString}`, {
       method: "GET",
@@ -43,13 +64,78 @@ export default function Feed() {
     return;
   }
 
+  async function queryPlaylist(){
+    if(user)
+      setGamesData([...user.playlist]);
+    return;
+  }
+
+  async function queryReviewed(searchString : string){
+    const response = await fetch(`/api/auth/game?title=${searchString}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+
+    setGamesData([...response]);
+    return;
+  }
+
+  async function queryUsers(searchString : string){
+    searchString = (searchString == ".*") ? "" : searchString;
+    const response = await fetch(`/api/users/${searchString}`, {
+      method: "GET",
+      headers: { 
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json"
+       },
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+
+    setUsersData([...response]);
+    return;
+  }
+
+  useEffect(() => {
+    queryUser();
+  }, []);
+
+  useEffect(() => {
+    if(user){
+      for(let i=0; i++; i < gamesData.length){
+        for(let j=0; j++; j < user.playlist.length){
+          console.log("hi")
+          if(user.playlist[j]._id == gamesData[i]._id)
+            setWant((w) => ({ ...w, [gamesData[i]._id]: true }))
+          else
+            setWant((w) => ({ ...w, [gamesData[i]._id]: false }))
+        }
+      }
+    }
+    
+  }, [gamesData]);
+
   useEffect(() => {
     if(mode === "games"){
       queryGames(searchTerm);
     } else if(mode === "users"){
-
+      queryUsers(searchTerm);
     } else return;
-  }, [searchTerm]);
+  }, [searchTerm, mode]);
+
+    useEffect(() => {
+    if(tab === "want"){
+      queryPlaylist();
+    } else if(tab === "rated"){
+      queryReviewed(searchTerm);
+    } else{
+      queryGames(searchTerm);
+    };
+  }, [tab, usersData]);
 
   useEffect(() => {
     if(q == "")
@@ -61,10 +147,29 @@ export default function Feed() {
   useEffect(() => { localStorage.setItem(WANT_KEY, JSON.stringify(want)); }, [want]);
   useEffect(() => { localStorage.setItem(RATE_KEY, JSON.stringify(ratings)); }, [ratings]);
 
-  function toggleWant(id: string) { setWant((w) => ({ ...w, [id]: !w[id] })); }
-  function rate(id: string, n: number) { setRatings((r) => ({ ...r, [id]: n })); }
+  async function toggleWant(id: string) { 
+    if(want[id] == false || !(want[id])){
+      await fetch(`/api/auth/watch/${id.trim()}`, {
+      method: "POST",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }})
+    } else{
+      await fetch(`/api/auth/watch/${id}`, {
+      method: "DELETE",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }})
+    }
+    
 
-  const ql = q.trim().toLowerCase();
+    setWant((w) => ({ ...w, [id]: !w[id] })); 
+  }
+  function rate(id: string, n: number) { 
+    setRatings((r) => ({ ...r, [id]: n })); 
+  }
 
   // ---- Games view ----
   /*const filteredGames: Game[] = useMemo(() => {
@@ -81,7 +186,7 @@ export default function Feed() {
     if (tab === "rated") list = list.filter((g : Game) => (ratings[g._id] || 0) > 0);
     return list;
   }, [ql, tab, want, ratings]);
-*/
+
   // ---- Users view ----
   const filteredUsers = useMemo(() => {
     if (!ql) return mockUsers;
@@ -89,7 +194,7 @@ export default function Feed() {
       [u.username, u.bio ?? ""].some((v) => v.toLowerCase().includes(ql))
     );
   }, [ql]);
-
+*/
   return (
     <section>
       {/* Search + Tabs/Toggle */}
@@ -146,9 +251,9 @@ export default function Feed() {
         )
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredUsers.map((u) => (
-            <li
-              key={u.username}
+          {usersData.map((u) => (
+            <Link key={u.username} to={`/profile/${encodeURIComponent(u.username)}`}><li
+              key={u._id}
               className="rounded-2xl border border-[rgba(30,195,255,0.25)] bg-[rgba(8,25,38,0.6)] p-4"
             >
               <div className="text-sm text-[#a7e9ff]">User</div>
@@ -162,7 +267,7 @@ export default function Feed() {
               >
                 Follow
               </button>
-            </li>
+            </li></Link>
           ))}
         </ul>
       )}

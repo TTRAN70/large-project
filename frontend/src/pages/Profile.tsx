@@ -66,6 +66,7 @@ export default function Profile() {
 
   useEffect(() => {
     if(userData){
+      console.log(userData);
       setUsername(userData.username);
       setBio(userData.bio);
     }
@@ -123,11 +124,15 @@ export default function Profile() {
 
     // Clear app-local data (extend with friends keys)
     try {
-      localStorage.removeItem("gb_user");
-      localStorage.removeItem("gb_want"); // want-to-play (Feed)
-      localStorage.removeItem("gb_ratings"); // ratings (Feed)
-      localStorage.removeItem("gb_friends"); // friends list (Friends page)
-      localStorage.removeItem("gb_friend_requests"); // friend requests (Friends page)
+      fetch(`/api/auth/profile/delete`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }}).then((res) => {
+        if (res.ok) {
+          auth.logout();
+        }})
     } catch {}
 
     // Notify + send to signup
