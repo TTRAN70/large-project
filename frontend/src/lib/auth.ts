@@ -1,8 +1,14 @@
 // frontend/src/lib/auth.ts
 export type AuthToken = { token: string; expiry: Date };
-
+import { jwtDecode } from "jwt-decode";
 const KEY = "user_token";
 const USERNAME = "";
+
+type User = {
+  id: string,
+  username: string,
+  email: string,
+}
 
 function notify() {
   window.dispatchEvent(new Event("auth:change"));
@@ -25,6 +31,17 @@ export const auth = {
       const username = localStorage.getItem(USERNAME);
       if (username) {
         return username;
+      } else return "";
+    } catch {
+      return "";
+    }
+  },
+  get id(): string {
+    try {
+      const tok = auth.token;
+      if (tok) {
+        const decodedTok : User = jwtDecode(tok.token) as User;
+        return decodedTok.id;
       } else return "";
     } catch {
       return "";

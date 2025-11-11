@@ -140,7 +140,7 @@ export default function GameDetails() {
           </p>
           <ul className="flex flex-row">
             {game.platforms.map( el => (
-              <li key={1} className="text-gray-300 px-1"> {el} </li>
+              <li key={0} className="text-gray-300 px-1"> {el} </li>
             ))}
           </ul>
         </section>

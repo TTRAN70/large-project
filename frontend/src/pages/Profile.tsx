@@ -1,6 +1,6 @@
 // src/pages/Profile.tsx
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { auth } from "../lib/auth";
 import { jwtDecode } from "jwt-decode";
 
@@ -12,9 +12,10 @@ export default function Profile() {
   const currentUser: any = currentUserToken
     ? jwtDecode(currentUserToken)
     : null;
-  const isOwnProfile = currentUser ? routeUser == currentUser.id : false;
+  const isOwnProfile = currentUser.id ? routeUser == currentUser.id : false;
 
   // Local state mirrors current user for editing
+  const [userData, setUserData] = useState<any | null>(null);
   const [usernameState, setUsername] = useState("");
   const [bioState, setBio] = useState("");
   const [message, setMessage] = useState<string>("");
@@ -22,20 +23,22 @@ export default function Profile() {
 
   // Keep fields in sync if user updates elsewhere
   useEffect(() => {
-    async function fetchUserData(): Promise<string> {
+    async function fetchUserData() {
       const res = isOwnProfile
-        ? await fetch(`/api/profile/me`, {
+        ? await fetch(`/api/auth/profile/me`, {
+            method: "GET",
             headers: {
-              Authorization: `Bearer: ${currentUserToken}`,
+              "Authorization": `Bearer ${currentUserToken}`,
               "Content-Type": "application/json",
             },
           }).then((response) => {
             if (response.ok) return response.json();
             else return "no user found";
           })
-        : await fetch(`/api/user/${routeUser}`, {
+        : await fetch(`/api/auth/user/${routeUser}`, {
+            method: "GET",
             headers: {
-              Authorization: `Bearer: ${currentUserToken}`,
+              "Authorization": `Bearer ${currentUserToken}`,
               "Content-Type": "application/json",
             },
           }).then((response) => {
@@ -43,14 +46,11 @@ export default function Profile() {
             else return "no user found";
           });
 
-      return res;
+      setUserData(res);
+      return;
     }
 
-    const userData: any = fetchUserData().then((rawData) => {
-      return rawData != "no user found" ? JSON.parse(rawData) : rawData;
-    });
-    setUsername(userData.username);
-    setBio(userData.bio);
+    fetchUserData();
 
     const sync = () => {
       const userEncrypted = auth.token?.token;
@@ -63,6 +63,13 @@ export default function Profile() {
     window.addEventListener("auth:change", sync);
     return () => window.removeEventListener("auth:change", sync);
   }, []);
+
+  useEffect(() => {
+    if(userData){
+      setUsername(userData.username);
+      setBio(userData.bio);
+    }
+  }, [userData])
 
   function onStartEdit() {
     // reset to latest saved values when entering edit
@@ -88,10 +95,10 @@ export default function Profile() {
       return;
     }
 
-    const res = await fetch(`/api/profile/edit`, {
+    const res = await fetch(`/api/auth/profile/edit`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer: ${currentUserToken}`,
+        "Authorization": `Bearer ${currentUserToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -156,7 +163,7 @@ export default function Profile() {
         isEditing ? (
           // Edit mode
           <form
-            onSubmit={void onSave}
+            onSubmit={onSave}
             className="max-w-xl space-y-4 rounded-2xl border border-[#1ec3ff]/30 bg-white/5 p-5 backdrop-blur"
           >
             {message && (
@@ -239,6 +246,9 @@ export default function Profile() {
           </p>
         </div>
       )}
+      <Link to="/feed" className="rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10">
+        ← Back to Feed
+      </Link>
     </section>
   );
 }
