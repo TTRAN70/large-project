@@ -9,7 +9,10 @@ import Profile from "./pages/Profile";
 import GameDetails from "./pages/GameDetails";
 import Friends from "./pages/Friends";
 import Reset from "./pages/Reset";
+import ResetPassword from "./pages/ResetPassword";
 import Verify from "./pages/Verify"
+
+
 ;
 export default function App() {
   return (
@@ -19,6 +22,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset" element={<Reset />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/verify/:verification_token" element={<Verify />} />
           <Route element={<Protected />}>
             <Route path="/feed" index element={<Feed />} />
