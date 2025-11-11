@@ -51,7 +51,7 @@ export default function Signup() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center px-4">
       <form
-        onSubmit={void onSubmit}
+        onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-[rgba(30,195,255,0.35)] bg-[rgba(255,255,255,0.04)] p-6 backdrop-blur"
         aria-labelledby="signup-title"
       >

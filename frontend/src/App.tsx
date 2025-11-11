@@ -10,10 +10,8 @@ import GameDetails from "./pages/GameDetails";
 import Friends from "./pages/Friends";
 import Reset from "./pages/Reset";
 import ResetPassword from "./pages/ResetPassword";
-import Verify from "./pages/Verify"
+import Verify from "./pages/Verify";
 
-
-;
 export default function App() {
   return (
     <BrowserRouter>

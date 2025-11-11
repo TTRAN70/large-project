@@ -31,15 +31,16 @@ export default function Login() {
       }),
     }).then((response) => {
       if (response.ok) {
+        //store session locally
         return response.json();
       } else {
         //todo: error handling
       }
     });
 
-    //store session locally
-    auth.login(res.token, res.user.username);
 
+    auth.login(res.token, res.user.username);
+    
     //send user to either initally desired page, or feed by default
     if (from == "/") {
       nav("/feed");
@@ -51,7 +52,7 @@ export default function Login() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center px-4">
       <form
-        onSubmit={void onSubmit}
+        onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-2xl border border-[rgba(30,195,255,0.35)] bg-[rgba(255,255,255,0.04)] p-6 backdrop-blur"
         aria-labelledby="login-title"
       >
