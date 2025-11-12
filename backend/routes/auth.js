@@ -380,9 +380,8 @@ router.post("/profile/delete", auth, async (req, res) => {
     await Review.deleteMany({ user: userId });
 
     // Delete any refresh, email, or reset tokens linked to this user
-    await Refresh_token.deleteMany({ user: userId });
-    await Email_token.deleteMany({ user: userId });
-    await Reset_token.deleteMany({ user: userId });
+    await EmailToken.deleteMany({ user: userId });
+    await ResetToken.deleteMany({ user: userId });
 
     // Finally, delete the user document itself
     await User.findByIdAndDelete(userId);
