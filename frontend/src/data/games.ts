@@ -1,13 +1,15 @@
 export type Game = {
-  id: string;
+  _id: string;
   title: string;
-  year: number;
-  genre: string;
-  cover: string;   // image URL
-  accent?: string; // eg "#7dd3fc" for a subtle edge glow
+  description: string;
+  release_year: number;
+  main_developer: string;
+  publisher: string;
+  genres: string[];
+  platforms: string[];
+  cover_url: string;
 };
-
-export const GAMES: Game[] = [
+/*export const GAMES: Game[] = [
   {
     id: "neon-chronicles",
     title: "Neon Chronicles",
@@ -49,3 +51,4 @@ export const GAMES: Game[] = [
     accent: "#f472b6",
   },
 ];
+*/

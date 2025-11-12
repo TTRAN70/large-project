@@ -90,7 +90,7 @@ export default function FollowersPage() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Your network</h1>
         <Link
-          to="/"
+          to="/feed"
           className="rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
         >
           ← Back to Feed

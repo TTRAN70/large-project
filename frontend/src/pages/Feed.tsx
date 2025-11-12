@@ -1,17 +1,28 @@
 // src/pages/Feed.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import GameCard from "../components/GameCard";
-import { GAMES, type Game } from "../data/games";
+import { type Game } from "../data/games";
 import { useSearchMode } from "../lib/searchMode";
 import SearchToggle from "../components/SearchToggle";
-import { mockUsers } from "../data/users";
+import { type User } from "../data/users";
+import { auth } from "../lib/auth";
 
 type Tab = "all" | "want" | "rated";
 const WANT_KEY = "gb_want";
 const RATE_KEY = "gb_ratings";
 
+type UserAction = [target: string, action : string];
+
 export default function Feed() {
   const { mode } = useSearchMode();
+  const [user, setUser] = useState<User | null>();
+  const [targetUserAction, setTargetUserAction] = useState<UserAction>(["", ""]);
+  const [gamesData, setGamesData] = useState<Game []>([]);
+  const [usersData, setUsersData] = useState<User []>([]);
+  const currentUserToken = auth.token?.token;
+
+  const [searchTerm, setSearchTerm] = useState(".*");
 
   // persistent wantlist & ratings (for Games mode)
   const [want, setWant] = useState<Record<string, boolean>>(() => {
@@ -25,37 +36,171 @@ export default function Feed() {
   const [tab, setTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
 
+
+  async function queryUser(){
+    const res = await fetch(`/api/auth/profile/me`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${currentUserToken}`,
+              "Content-Type": "application/json",
+            },
+          }).then((response) => {
+            if(response.ok){
+              return response.json();
+            } 
+            else return "no user found";
+          });
+
+    setUser(res);
+  }
+
+  async function queryGames(searchString : string){
+    const response = await fetch(`/api/auth/game?title=${searchString}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+
+    setGamesData([...response]);
+    return;
+  }
+
+  async function queryPlaylist(){
+    await queryUser();
+    if(user)
+      setGamesData([...user.playlist]);
+    return;
+  }
+
+  async function queryReviewed(searchString : string){
+    const response = await fetch(`/api/auth/game?title=${searchString}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+
+    setGamesData([...response]);
+    return;
+  }
+
+  async function queryUsers(searchString : string){
+    searchString = (searchString == ".*") ? "" : searchString;
+    const response = await fetch(`/api/users/${searchString}`, {
+      method: "GET",
+      headers: { 
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json"
+       },
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+
+    setUsersData([...response]);
+    return;
+  }
+
+  useEffect(() => {
+    queryUser();
+  }, []);
+
+  useEffect(() => {
+    if(user){
+      for(let i=0; i++; i < gamesData.length){
+        for(let j=0; j++; j < user.playlist.length){
+          if(user.playlist[j]._id == gamesData[i]._id)
+            setWant((w) => ({ ...w, [gamesData[i]._id]: true }))
+          else
+            setWant((w) => ({ ...w, [gamesData[i]._id]: false }))
+        }
+      }
+    }
+    
+  }, [gamesData]);
+
+  useEffect(() => {
+    if(mode === "games"){
+      queryGames(searchTerm);
+    } else if(mode === "users"){
+      queryUsers(searchTerm);
+    } else return;
+  }, [searchTerm, mode]);
+
+    useEffect(() => {
+    if(tab === "want"){
+      queryPlaylist();
+    } else if(tab === "rated"){
+      queryReviewed(searchTerm);
+    } else{
+      queryGames(searchTerm);
+    };
+  }, [tab, usersData]);
+
+  useEffect(() => {
+    if(q == "")
+      setSearchTerm(".*");
+    else
+      setSearchTerm(q.trim().toLowerCase());
+  }, [q]);
+
+  useEffect(() => {
+    if(targetUserAction[1] == "follow")
+      onFollow();
+    else if(targetUserAction[1] == "unfollow")
+      onUnfollow();
+  }, [targetUserAction])
+
   useEffect(() => { localStorage.setItem(WANT_KEY, JSON.stringify(want)); }, [want]);
   useEffect(() => { localStorage.setItem(RATE_KEY, JSON.stringify(ratings)); }, [ratings]);
 
-  function toggleWant(id: string) { setWant((w) => ({ ...w, [id]: !w[id] })); }
-  function rate(id: string, n: number) { setRatings((r) => ({ ...r, [id]: n })); }
-
-  const ql = q.trim().toLowerCase();
-
-  // ---- Games view ----
-  const filteredGames: Game[] = useMemo(() => {
-    let list = GAMES;
-    if (ql) {
-      list = list.filter(
-        (g) =>
-          g.title.toLowerCase().includes(ql) ||
-          g.genre.toLowerCase().includes(ql) ||
-          String(g.year).includes(ql)
-      );
+  async function toggleWant(id: string) { 
+    if(want[id] == false || !(want[id])){
+      await fetch(`/api/auth/watch/${id.trim()}`, {
+      method: "POST",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }})
+    } else{
+      await fetch(`/api/auth/watch/${id}`, {
+      method: "DELETE",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }})
     }
-    if (tab === "want")  list = list.filter((g) => want[g.id]);
-    if (tab === "rated") list = list.filter((g) => (ratings[g.id] || 0) > 0);
-    return list;
-  }, [ql, tab, want, ratings]);
 
-  // ---- Users view ----
-  const filteredUsers = useMemo(() => {
-    if (!ql) return mockUsers;
-    return mockUsers.filter((u) =>
-      [u.username, u.bio ?? ""].some((v) => v.toLowerCase().includes(ql))
-    );
-  }, [ql]);
+    setWant((w) => ({ ...w, [id]: !w[id] })); 
+  }
+  function rate(id: string, n: number) { 
+    setRatings((r) => ({ ...r, [id]: n })); 
+  }
+
+  async function onFollow(){
+    await fetch(`/api/auth/follow/${targetUserAction[0]}`, {
+      method: "POST",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }});
+
+    await queryUser();
+  }
+
+  async function onUnfollow(){
+    await fetch(`/api/auth/unfollow/${targetUserAction[0]}`, {
+      method: "POST",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }});
+
+    await queryUser();
+  }
 
   return (
     <section>
@@ -93,18 +238,18 @@ export default function Feed() {
 
       {/* Content */}
       {mode === "games" ? (
-        filteredGames.length === 0 ? (
+        gamesData.length === 0 ? (
           <p className="rounded-xl border border-[#1ec3ff]/20 bg-[#061a27]/70 p-7 text-center text-[#a7e9ff]">
             No games match your filters.
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredGames.map((g) => (
+            {gamesData.map((g) => (
               <GameCard
-                key={g.id}
+                key={g._id}
                 game={g}
-                want={!!want[g.id]}
-                rating={ratings[g.id] || 0}
+                want={!!want[g._id]}
+                rating={ratings[g._id] || 0}
                 onToggleWant={toggleWant}
                 onRate={rate}
               />
@@ -113,23 +258,40 @@ export default function Feed() {
         )
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredUsers.map((u) => (
+          {usersData.map((u) => (((user) && (u.username != user.username)) ? (
             <li
-              key={u.username}
+              key={u._id}
               className="rounded-2xl border border-[rgba(30,195,255,0.25)] bg-[rgba(8,25,38,0.6)] p-4"
             >
               <div className="text-sm text-[#a7e9ff]">User</div>
-              <div className="text-lg font-semibold text-white">@{u.username}</div>
+              <Link key={u._id} to={`/profile/${encodeURIComponent(u._id)}`}>
+                <div className="text-lg font-semibold text-white">@{u.username}</div>
+              </Link>
               <p className="mt-1 text-sm text-gray-300">{u.bio || "—"}</p>
-              {/* (Optional) Wire to Friends requests later */}
-              <button
+              {user && user.following.includes(u.username) ? (
+                <button
                 type="button"
+                data-id= {u._id}
                 className="mt-3 w-full rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
                 title="(Mock) Add Friend"
-              >
+                onClick={() => {
+                  setTargetUserAction([u._id, "unfollow"]);
+                }}>
+                Unfollow
+              </button>
+              ) : (
+              <button
+                type="button"
+                data-id= {u._id}
+                className="mt-3 w-full rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
+                title="(Mock) Add Friend"
+                onClick={() => {
+                  setTargetUserAction([u._id, "follow"])
+                }}>
                 Follow
               </button>
-            </li>
+              )}
+            </li>) :(null)
           ))}
         </ul>
       )}

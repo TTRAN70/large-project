@@ -31,14 +31,12 @@ const gameSchema = new mongoose.Schema(
   //same as 1st note
     genres:{
       type: [{
-        type: String,
-        unique: true
+        type: String
       }]
     },
     platforms:{
       type: [{
-        type: String,
-        unique: true
+        type: String
       }]
     } 
   },

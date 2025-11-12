@@ -64,7 +64,7 @@ export default function UserMenu({ user }: { user: string }) {
           className="absolute right-0 mt-2 w-48 overflow-hidden rounded-xl border border-[#1ec3ff]/30 bg-[rgba(6,24,36,0.98)] p-1 shadow-xl backdrop-blur"
         >
           <Link
-            to={`/profile/${encodeURIComponent(user)}`}
+            to={`/profile/${encodeURIComponent(auth.id)}`}
             role="menuitem"
             className="block rounded-lg px-3 py-2 text-sm text-[#d7f4ff] hover:bg-[#1ec3ff]/10"
             onClick={() => setOpen(false)}
