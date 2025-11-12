@@ -16,8 +16,12 @@ const FRONTEND_URL =
     ? process.env.FRONTEND_DEV_URI
     : process.env.FRONTEND_URL;
 
+const isProd = !(process.env.NODE_ENV === "development");
+
 const transporter = nodemailer.createTransport({
-  service: "gmail", // or use host/port below
+  service: "gmail",
+  port: isProd ? 465 : 587, // 465 for secure (SSL), 587 for TLS or dev
+  secure: isProd, // true for port 465 (SSL), false for 587 (TLS)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
