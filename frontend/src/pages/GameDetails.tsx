@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { type Game } from "../data/games.ts"
+import ReviewModal from "../components/ReviewModal.tsx";
 
 const WANT_KEY = "gb_want";
 const RATE_KEY = "gb_ratings";
@@ -10,6 +11,8 @@ export default function GameDetails() {
   const { title } = useParams<{ title: string }>();
   const nav = useNavigate();
   const [game, setGame] = useState<Game | null>(null);
+  const [hiddenState, setHiddenState] = useState(true);
+  const [messageState, setMessageState] = useState("");
 
   async function queryGame(){
      const res : Game[] = await fetch (`/api/auth/game?title=${title}`, {
@@ -26,6 +29,10 @@ export default function GameDetails() {
   useEffect(() => {
     queryGame();
   }, []);
+
+  useEffect(() => {
+    console.log(hiddenState);
+  }, [hiddenState]);
 
   const gid = game ? game._id : 0;
 
@@ -79,7 +86,8 @@ export default function GameDetails() {
     );
   }
 
-  return (
+  if(hiddenState) {
+    return (
     <section className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[340px,1fr]">
       <button
         onClick={() => nav(-1)}
@@ -99,7 +107,7 @@ export default function GameDetails() {
           <h1 className="text-3xl font-bold text-white">{game.title} ({game.release_year})</h1>
           <div className="flex items-center gap-3 text-base text-[#a7e9ff]">
             {game.genres.map( el => (
-              <span key={1} className="rounded bg-[#1ec3ff]/15 px-2.5 py-1"> {el}</span>
+              <span key={el} className="rounded bg-[#1ec3ff]/15 px-2.5 py-1"> {el}</span>
             ))}
           </div>
         </header>
@@ -140,13 +148,24 @@ export default function GameDetails() {
           </p>
           <ul className="flex flex-row">
             {game.platforms.map( el => (
-              <li key={0} className="text-gray-300 px-1"> {el} </li>
+              <li key={el} className="text-gray-300 px-1"> {el} </li>
             ))}
           </ul>
         </section>
       </div>
+      <button className="md:col-span-2 rounded-lg border border-[#1ec3ff]/40 mt-10 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
+        onClick={() => setHiddenState(false)}>
+        Leave a review
+      </button>
     </section>
   );
+  }
+  
+  else{
+    return(
+      <ReviewModal messageSetter={setMessageState} hiddenSetter={setHiddenState} game_id={game._id}></ReviewModal>
+    )
+  }
 }
 
 /** Whole-star renderer with half support (0..10 total). */
