@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { auth } from "../lib/auth";
 import { jwtDecode } from "jwt-decode";
-import { type User } from "../data/users";
 import ReviewCard from "../components/ReviewCard.tsx";
 
 type Review = {
@@ -98,11 +97,12 @@ export default function Profile() {
   }, [userData])
 
   useEffect(() => {
-    console.log(target);
-  }, [target])
+    if(target != "")
+      handleDelete();
+  }, [target]);
 
   async function handleDelete(){
-    console.log(target);
+  //jank way to stall
     await fetch(`/api/auth/review/${target}`, {
       method: "DELETE",
       headers:{
@@ -296,11 +296,10 @@ export default function Profile() {
       {(reviews.length > 0) ? (
                     <div>
                       {reviews.map((el : Review) => (
-                      <div key={el.id}>
+                      <div key={el.id}> {el.game}
                         <ReviewCard user={usernameState} createdAt={el.createdAt} rating={el.rating} body={el.body}></ReviewCard>
                         <button className="text-red-300 rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10" onClick={() => {
                           setTarget(el.id);
-                          handleDelete();
                         }}>Delete?</button>
                       </div>
                       ))}
