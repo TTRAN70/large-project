@@ -433,6 +433,7 @@ router.get("/profile/:id/reviews", async (req, res) => {
       user: user.username,
       reviews: formatted, // empty array if no reviews
     });
+
   } catch (error) {
     console.error("Error fetching user reviews:", error.message);
     res.status(500).json({ error: "Server error" });
@@ -759,34 +760,26 @@ router.put("/review/:id", auth, async (req, res) => {
   }
 });
 
-// Get a review by its ID
+// Get a review by its gameID
 router.get("/review/:id", async (req, res) => {
   try {
-    const reviewId = req.params.id;
+    const gameId = req.params.id;
 
-    if (!mongoose.Types.ObjectId.isValid(reviewId)) {
-      return res.status(400).json({ error: "Invalid review ID" });
+    if (!mongoose.Types.ObjectId.isValid(gameId)) {
+      return res.status(400).json({ error: "Invalid game ID" });
     }
 
     // get the reviewer's username // get the game title
-    const review = await Review.findById(reviewId)
+    const reviews = await Review.find({game: gameId})
       .populate("user", "username")
       .populate("game", "title")
       .lean();
 
-    if (!review) {
+    if (!reviews) {
       return res.status(404).json({ error: "Review not found" });
     }
 
-    res.json({
-      id: review._id,
-      user: review.user.username,
-      game: review.game.title,
-      rating: review.rating,
-      body: review.body,
-      createdAt: review.createdAt,
-      updatedAt: review.updatedAt,
-    });
+    res.json(reviews);
   } catch (error) {
     console.error("Error fetching review:", error.message);
     res.status(500).json({ error: "Server error" });

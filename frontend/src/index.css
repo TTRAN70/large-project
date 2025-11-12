@@ -1,63 +1,68 @@
 @import "tailwindcss";
 
-/* Your custom theme for the GameBox look */
-@theme {
-  --color-navy: #001a25;
-  --color-cyan: #00ffff;
-  --color-blue-accent: #1ec3ff;
-
-  /* Optional typography + radii you’ll reuse */
-  --radius-card: 0.875rem; /* rounded-[14px] */
-  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.25);
-}
-
-/* Global base styles (optional) */
 html, body {
   height: 100%;
-}
-body {
-  @apply min-h-screen bg-gradient-to-b from-navy via-[#002b3b] to-navy text-white;
-}
-
-
-/* TODO: Match the theme from design to corresponding variables https://tailwindcss.com/docs/theme */
-
-/* Commented out for cat
-   
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  overflow-x: hidden;
+  color: #fff; /* or inherit */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+.brand-glow { text-shadow: 0 0 10px rgba(30,195,255,0.35); }
+
+/* Subtle cyan breathing glow for the GameBox logo */
+@keyframes glowPulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(30,195,255,0.4)); }
+  50% { filter: drop-shadow(0 0 10px rgba(30,195,255,0.7)); }
+}
+
+.logo-glow {
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+.logo-hover:hover {
+  transform: scale(1.15);
+  
+  transition: all 0.25s ease-in-out;
+}
+
+@keyframes gb-pulse {
+  0%, 100% { filter: drop-shadow(0 10px 35px rgba(30,195,255,0.18)); transform: translateZ(0) scale(1); }
+  50%      { filter: drop-shadow(0 12px 55px rgba(30,195,255,0.30)); transform: translateZ(0) scale(1.01); }
+}
+.landing-logo-animate {
+  animation: gb-pulse 3.8s ease-in-out infinite;
+}
+
+/* --- Landing page animations --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-*/
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Utility classes */
+.fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 1s ease-out forwards;
+}
