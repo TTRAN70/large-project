@@ -3,6 +3,17 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { auth } from "../lib/auth";
 import { jwtDecode } from "jwt-decode";
+import { type User } from "../data/users";
+import ReviewCard from "../components/ReviewCard.tsx";
+
+type Review = {
+  id: string;
+  game: string;
+  rating: number;
+  body: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export default function Profile() {
   const nav = useNavigate();
@@ -20,6 +31,20 @@ export default function Profile() {
   const [bioState, setBio] = useState("");
   const [message, setMessage] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [reviews, setReviews] = useState([]);
+  const [target, setTarget] = useState("");
+
+
+  async function queryReviews(){
+    const res = await fetch(`/api/auth/profile/${isOwnProfile ? currentUser.id : routeUser}/reviews`, {
+      method: "GET",
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+
+    setReviews(res.reviews);
+  }
 
   // Keep fields in sync if user updates elsewhere
   useEffect(() => {
@@ -68,8 +93,26 @@ export default function Profile() {
     if(userData){
       setUsername(userData.username);
       setBio(userData.bio);
+      queryReviews();
     }
   }, [userData])
+
+  useEffect(() => {
+    console.log(target);
+  }, [target])
+
+  async function handleDelete(){
+    console.log(target);
+    await fetch(`/api/auth/review/${target}`, {
+      method: "DELETE",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      },}).then((res) => {
+        if(res.ok)
+          queryReviews();
+      })
+  }
 
   function onStartEdit() {
     // reset to latest saved values when entering edit
@@ -250,6 +293,19 @@ export default function Profile() {
           </p>
         </div>
       )}
+      {(reviews.length > 0) ? (
+                    <div>
+                      {reviews.map((el : Review) => (
+                      <div key={el.id}>
+                        <ReviewCard user={usernameState} createdAt={el.createdAt} rating={el.rating} body={el.body}></ReviewCard>
+                        <button className="text-red-300 rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10" onClick={() => {
+                          setTarget(el.id);
+                          handleDelete();
+                        }}>Delete?</button>
+                      </div>
+                      ))}
+                    </div>
+                  ) : (null)}
       <Link to="/feed" className="rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10">
         ← Back to Feed
       </Link>

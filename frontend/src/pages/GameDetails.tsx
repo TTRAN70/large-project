@@ -1,11 +1,22 @@
 import {useEffect, useState} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { type Game } from "../data/games.ts"
+import { type User } from "../data/users.ts";
 import ReviewModal from "../components/ReviewModal.tsx";
+import ReviewCard from "../components/ReviewCard.tsx";
 
 const WANT_KEY = "gb_want";
-const RATE_KEY = "gb_ratings";
+const RATE_KEY = "gb_rate";
 
+type Review = {
+  _id: string;
+  user: User;
+  game: string;
+  rating: number;
+  body: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export default function GameDetails() {
   const { title } = useParams<{ title: string }>();
@@ -13,6 +24,7 @@ export default function GameDetails() {
   const [game, setGame] = useState<Game | null>(null);
   const [hiddenState, setHiddenState] = useState(true);
   const [messageState, setMessageState] = useState("");
+  const [reviews, setReviews] = useState([]);
 
   async function queryGame(){
      const res : Game[] = await fetch (`/api/auth/game?title=${title}`, {
@@ -26,13 +38,26 @@ export default function GameDetails() {
     setGame(res[0]);
   }
 
+  async function queryReviews(){
+     const res = await fetch (`/api/auth/review/${game?._id}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    }).then((res) => {
+      if(res.ok)
+        return res.json();
+    });
+    
+    setReviews(res);
+  }
+
   useEffect(() => {
     queryGame();
   }, []);
 
   useEffect(() => {
-    console.log(hiddenState);
-  }, [hiddenState]);
+    if(game)
+      queryReviews();
+  }, [game]);
 
   const gid = game ? game._id : 0;
 
@@ -153,14 +178,26 @@ export default function GameDetails() {
           </ul>
         </section>
       </div>
-      <button className="md:col-span-2 rounded-lg border border-[#1ec3ff]/40 mt-10 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
+      {messageState === "" ? (
+        <button className="md:col-span-2 rounded-lg border border-[#1ec3ff]/40 mt-10 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
         onClick={() => setHiddenState(false)}>
-        Leave a review
-      </button>
+          Leave a review
+        </button>
+      ) : (
+        <p className="md:col-span-2 rounded-lg border border-[#1ec3ff]/40 mt-10 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10">
+          {messageState}
+        </p>
+      )}
+      {(game && reviews.length > 0) ? (
+        <div>
+          {reviews.map((el : Review) => (
+            <ReviewCard key={el._id} user={el.user.username} createdAt={el.createdAt} rating={el.rating} body={el.body}></ReviewCard>
+          ))}
+        </div>
+      ) : (null)}
     </section>
   );
   }
-  
   else{
     return(
       <ReviewModal messageSetter={setMessageState} hiddenSetter={setHiddenState} game_id={game._id}></ReviewModal>
