@@ -12,9 +12,12 @@ type Tab = "all" | "want" | "rated";
 const WANT_KEY = "gb_want";
 const RATE_KEY = "gb_ratings";
 
+type UserAction = [target: string, action : string];
+
 export default function Feed() {
   const { mode } = useSearchMode();
   const [user, setUser] = useState<User | null>();
+  const [targetUserAction, setTargetUserAction] = useState<UserAction>(["", ""]);
   const [gamesData, setGamesData] = useState<Game []>([]);
   const [usersData, setUsersData] = useState<User []>([]);
   const currentUserToken = auth.token?.token;
@@ -65,6 +68,7 @@ export default function Feed() {
   }
 
   async function queryPlaylist(){
+    await queryUser();
     if(user)
       setGamesData([...user.playlist]);
     return;
@@ -108,7 +112,6 @@ export default function Feed() {
     if(user){
       for(let i=0; i++; i < gamesData.length){
         for(let j=0; j++; j < user.playlist.length){
-          console.log("hi")
           if(user.playlist[j]._id == gamesData[i]._id)
             setWant((w) => ({ ...w, [gamesData[i]._id]: true }))
           else
@@ -144,6 +147,13 @@ export default function Feed() {
       setSearchTerm(q.trim().toLowerCase());
   }, [q]);
 
+  useEffect(() => {
+    if(targetUserAction[1] == "follow")
+      onFollow();
+    else if(targetUserAction[1] == "unfollow")
+      onUnfollow();
+  }, [targetUserAction])
+
   useEffect(() => { localStorage.setItem(WANT_KEY, JSON.stringify(want)); }, [want]);
   useEffect(() => { localStorage.setItem(RATE_KEY, JSON.stringify(ratings)); }, [ratings]);
 
@@ -163,7 +173,6 @@ export default function Feed() {
         "Content-Type": "application/json",
       }})
     }
-    
 
     setWant((w) => ({ ...w, [id]: !w[id] })); 
   }
@@ -171,30 +180,28 @@ export default function Feed() {
     setRatings((r) => ({ ...r, [id]: n })); 
   }
 
-  // ---- Games view ----
-  /*const filteredGames: Game[] = useMemo(() => {
-    let list = [];
-    if (ql) {
-      list = list.filter(
-        (g) =>
-          g.title.toLowerCase().includes(ql) ||
-          g.genre.toLowerCase().includes(ql) ||
-          String(g.year).includes(ql)
-      );
-    }
-    if (tab === "want")  list = list.filter((g : Game) => want[g._id]);
-    if (tab === "rated") list = list.filter((g : Game) => (ratings[g._id] || 0) > 0);
-    return list;
-  }, [ql, tab, want, ratings]);
+  async function onFollow(){
+    await fetch(`/api/auth/follow/${targetUserAction[0]}`, {
+      method: "POST",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }});
 
-  // ---- Users view ----
-  const filteredUsers = useMemo(() => {
-    if (!ql) return mockUsers;
-    return mockUsers.filter((u) =>
-      [u.username, u.bio ?? ""].some((v) => v.toLowerCase().includes(ql))
-    );
-  }, [ql]);
-*/
+    await queryUser();
+  }
+
+  async function onUnfollow(){
+    await fetch(`/api/auth/unfollow/${targetUserAction[0]}`, {
+      method: "POST",
+      headers:{
+        "Authorization": `Bearer ${currentUserToken}`,
+        "Content-Type": "application/json",
+      }});
+
+    await queryUser();
+  }
+
   return (
     <section>
       {/* Search + Tabs/Toggle */}
@@ -251,23 +258,40 @@ export default function Feed() {
         )
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {usersData.map((u) => (
-            <Link key={u.username} to={`/profile/${encodeURIComponent(u.username)}`}><li
+          {usersData.map((u) => (((user) && (u.username != user.username)) ? (
+            <li
               key={u._id}
               className="rounded-2xl border border-[rgba(30,195,255,0.25)] bg-[rgba(8,25,38,0.6)] p-4"
             >
               <div className="text-sm text-[#a7e9ff]">User</div>
-              <div className="text-lg font-semibold text-white">@{u.username}</div>
+              <Link key={u._id} to={`/profile/${encodeURIComponent(u._id)}`}>
+                <div className="text-lg font-semibold text-white">@{u.username}</div>
+              </Link>
               <p className="mt-1 text-sm text-gray-300">{u.bio || "—"}</p>
-              {/* (Optional) Wire to Friends requests later */}
-              <button
+              {user && user.following.includes(u.username) ? (
+                <button
                 type="button"
+                data-id= {u._id}
                 className="mt-3 w-full rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
                 title="(Mock) Add Friend"
-              >
+                onClick={() => {
+                  setTargetUserAction([u._id, "unfollow"]);
+                }}>
+                Unfollow
+              </button>
+              ) : (
+              <button
+                type="button"
+                data-id= {u._id}
+                className="mt-3 w-full rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
+                title="(Mock) Add Friend"
+                onClick={() => {
+                  setTargetUserAction([u._id, "follow"])
+                }}>
                 Follow
               </button>
-            </li></Link>
+              )}
+            </li>) :(null)
           ))}
         </ul>
       )}

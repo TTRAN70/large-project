@@ -53,7 +53,7 @@ router.post("/register", async (req, res) => {
       from: `"GameRater" <${process.env.EMAIL_USER}>`,
       to: user.email,
       subject: "Verify your email",
-      html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`,
+      html: `<p>Hi ${user.username}, verify your email by clicking <a href=${verifyUrl}>this link</a>. Link expires in 1 hour.</p>`,
     });
 
     // Create JWT token
@@ -303,12 +303,12 @@ router.get("/profile/me", auth, async (req, res) => {
       .select("-password")
       .populate("followers", "username")
       .populate("following", "username")
+      .populate("playlist")
       .lean(); // plain JS object
 
     // Replace followers/following with just usernames
     user.followers = user.followers.map((f) => f.username);
     user.following = user.following.map((f) => f.username);
-
     // # of followers/following (unsure if needed)
     // user.followersCount = user.followers.length;
     // user.followingCount = user.following.length;

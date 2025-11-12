@@ -35,7 +35,7 @@ export default function Profile() {
             if (response.ok) return response.json();
             else return "no user found";
           })
-        : await fetch(`/api/auth/user/${routeUser}`, {
+        : await fetch(`/api/auth/profile/${routeUser}`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${currentUserToken}`,
@@ -66,7 +66,6 @@ export default function Profile() {
 
   useEffect(() => {
     if(userData){
-      console.log(userData);
       setUsername(userData.username);
       setBio(userData.bio);
     }
@@ -137,7 +136,7 @@ export default function Profile() {
 
     // Notify + send to signup
     window.dispatchEvent(new Event("auth:change"));
-    nav("/signup", { replace: true });
+    nav("/login", { replace: true });
   }
 
   return (
@@ -145,7 +144,7 @@ export default function Profile() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">
-            {isOwnProfile ? "Your profile" : `${routeUser}'s profile`}
+            {isOwnProfile ? "Your profile" : `${usernameState}'s profile`}
           </h1>
           {!isOwnProfile && (
             <p className="text-sm text-gray-300">Public view (read-only)</p>
@@ -245,9 +244,9 @@ export default function Profile() {
       ) : (
         // Public/read-only profile view (other users)
         <div className="max-w-xl space-y-2 rounded-2xl border border-[#1ec3ff]/30 bg-white/5 p-5 backdrop-blur">
-          <div className="text-lg font-medium">{routeUser}</div>
+          <div className="text-lg font-medium">{usernameState}</div>
           <p className="text-gray-300">
-            {routeUser}’s bio is hidden in this mock. (Public view.)
+            {bioState?.trim() ? bioState : "No bio yet."}
           </p>
         </div>
       )}
