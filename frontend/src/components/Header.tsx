@@ -8,16 +8,11 @@ export default function Header() {
   const [user, setUser] = useState(auth.username);
   const loc = useLocation();
 
-  useEffect(() => {
-    // Update on route changes
-    setUser(auth.username);
-  }, [loc.key]);
+  useEffect(() => setUser(auth.username), [loc.key]);
 
   useEffect(() => {
     const onAuthChange = () => setUser(auth.username);
-    // our custom event (same-tab)
     window.addEventListener("auth:change", onAuthChange);
-    // storage event (other tabs)
     window.addEventListener("storage", onAuthChange);
     return () => {
       window.removeEventListener("auth:change", onAuthChange);
@@ -26,15 +21,21 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[rgba(30,195,255,0.35)] bg-[rgba(0,18,30,0.8)] backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-[rgba(30,195,255,0.35)] bg-[rgba(0,18,30,0.75)] backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-        <Link
-          to="/"
-          className="text-xl font-bold tracking-tight text-[#1ec3ff]"
-        >
-          GameBox
+        {/* Wordmark brand */}
+        <Link to="/" className="flex items-center">
+          <img
+            src="/gamebox-wordmark.png"
+            alt="GameBox"
+            className="h-10 w-auto sm:h-12 md:h-14 lg:h-16 select-none logo-hover"
+            draggable={false}
+          />
+          <span className="sr-only">GameBox</span>
         </Link>
+
         <div className="flex-1" />
+
         {!user ? (
           <nav className="ml-3 flex items-center gap-3 text-sm">
             <Link

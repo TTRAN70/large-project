@@ -1,12 +1,11 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { auth } from "../lib/auth";
+// frontend/src/components/Protected.tsx
+import { Outlet } from "react-router-dom";
 
+/**
+ * Dev-only / UI-cleanup version:
+ * Lets you view protected routes without requiring login.
+ * Do NOT copy this into backend / main auth logic.
+ */
 export default function Protected() {
-  const token = auth.token;
-  const loc = useLocation();
-  if (!token) {
-    // send them to /login and remember where they came from
-    return <Navigate to="/login" replace state={{ from: loc }} />;
-  }
   return <Outlet />;
 }
