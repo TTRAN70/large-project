@@ -17,7 +17,7 @@ Fill in these values from the .env file from our Discord or just copy/paste into
 
 We're gonna use the database from the .env file
 
-PLEASE DO NOT SHARE IT. 
+PLEASE DO NOT SHARE IT.
 
 For viewing the data stored in the database, create a MongoDB account and I will invite you to it.
 
@@ -29,7 +29,7 @@ Frontend: `cd frontend` and then run `npm run dev`
 
 Backend: `cd backend` and then run `npm run dev`
 
-Tip: you can also check if your backend is running with http://localhost:3000/health
+Tip: you can also check if your backend is running with http://localhost:3000/api/health
 
 ## ✅ Testing
 
