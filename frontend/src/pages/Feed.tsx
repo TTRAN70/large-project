@@ -133,28 +133,35 @@ export default function Feed() {
     [queryUser],
   );
 
-  const queryReviewed = useCallback(async (searchString: string) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/auth/game?title=${searchString}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+  const queryReviewed = useCallback(
+    async (searchString: string) => {
+      if (!currentUserToken) return;
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/auth/games/reviewed`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${currentUserToken}`,
+            "Content-Type": "application/json",
+          },
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        // Filter for games that have been rated
-        setGamesData(data);
-      } else {
+        if (response.ok) {
+          const data = await response.json();
+          // Filter for games that have been rated
+          setGamesData(data);
+        } else {
+          setGamesData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching reviewed games:", error);
         setGamesData([]);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching reviewed games:", error);
-      setGamesData([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [currentUserToken],
+  );
 
   const queryUsers = useCallback(
     async (searchString: string) => {

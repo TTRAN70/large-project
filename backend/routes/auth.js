@@ -433,7 +433,6 @@ router.get("/profile/:id/reviews", async (req, res) => {
       user: user.username,
       reviews: formatted, // empty array if no reviews
     });
-
   } catch (error) {
     console.error("Error fetching user reviews:", error.message);
     res.status(500).json({ error: "Server error" });
@@ -770,7 +769,7 @@ router.get("/review/:id", async (req, res) => {
     }
 
     // get the reviewer's username // get the game title
-    const reviews = await Review.find({game: gameId})
+    const reviews = await Review.find({ game: gameId })
       .populate("user", "username")
       .populate("game", "title")
       .lean();
@@ -782,6 +781,37 @@ router.get("/review/:id", async (req, res) => {
     res.json(reviews);
   } catch (error) {
     console.error("Error fetching review:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// GET all games reviewed by a specific user
+router.get("/games/reviewed", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    // Find all reviews by this user
+    const reviews = await Review.find({ user: userId }).lean();
+
+    if (reviews.length === 0) {
+      return res.status(404).json({ error: "No reviews found for this user" });
+    }
+
+    // Extract unique game IDs from reviews
+    const gameIds = [
+      ...new Set(reviews.map((review) => review.game.toString())),
+    ];
+
+    // Fetch all games that match these IDs
+    const games = await Game.find({ _id: { $in: gameIds } }).lean();
+
+    res.json(games);
+  } catch (error) {
+    console.error("Error fetching user's reviewed games:", error.message);
     res.status(500).json({ error: "Server error" });
   }
 });
