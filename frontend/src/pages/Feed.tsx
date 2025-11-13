@@ -149,7 +149,17 @@ export default function Feed() {
         if (response.ok) {
           const data = await response.json();
           // Filter for games that have been rated
-          setGamesData(data);
+          if (!searchString.trim() || searchString === ".*") {
+            // If no search string, return all games
+            setGamesData(data);
+          } else {
+            // Filter games that match the search string
+            const filtered = data.filter((game) => {
+              const searchLower = searchString.toLowerCase();
+              return game.title?.toLowerCase().includes(searchLower);
+            });
+            setGamesData(filtered);
+          }
         } else {
           setGamesData([]);
         }
