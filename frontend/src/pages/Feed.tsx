@@ -17,7 +17,7 @@ type UserAction = [target: string, action: string];
 
 export default function Feed() {
   const { mode } = useSearchMode();
-  const [user, setUser] = useState<User | null>();
+  const [user, setUser] = useState<User | null>(null);
   const [targetUserAction, setTargetUserAction] = useState<UserAction>([
     "",
     "",
@@ -53,22 +53,31 @@ export default function Feed() {
   // Track previous mode and tab to detect changes
   const prevModeRef = useRef(mode);
   const prevTabRef = useRef(tab);
+  const prevSearchTermRef = useRef(searchTerm);
 
-  async function queryUser() {
-    const res = await fetch(`/api/auth/profile/me`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${currentUserToken}`,
-        "Content-Type": "application/json",
-      },
-    }).then((response) => {
-      if (response.ok) {
-        return response.json();
-      } else return "no user found";
-    });
+  const queryUser = useCallback(async () => {
+    if (!currentUserToken) return null;
 
-    setUser(res);
-  }
+    try {
+      const res = await fetch(`/api/auth/profile/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${currentUserToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.ok) {
+        const userData = await res.json();
+        setUser(userData);
+        return userData;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      return null;
+    }
+  }, [currentUserToken]);
 
   const queryGames = useCallback(async (searchString: string) => {
     setIsLoading(true);
@@ -76,12 +85,17 @@ export default function Feed() {
       const response = await fetch(`/api/auth/game?title=${searchString}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
-      }).then((res) => {
-        if (res.ok) return res.json();
-        return [];
       });
 
-      setGamesData([...response]);
+      if (response.ok) {
+        const data = await response.json();
+        setGamesData(data);
+      } else {
+        setGamesData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching games:", error);
+      setGamesData([]);
     } finally {
       setIsLoading(false);
     }
@@ -91,26 +105,32 @@ export default function Feed() {
     async (searchString = "") => {
       setIsLoading(true);
       try {
-        await queryUser();
-        if (user) {
+        // Fetch fresh user data
+        const userData = await queryUser();
+
+        if (userData && userData.playlist) {
           if (!searchString.trim() || searchString === ".*") {
             // If no search string, return all games
-            setGamesData([...user.playlist]);
+            setGamesData([...userData.playlist]);
           } else {
             // Filter games that match the search string
-            const filtered = user.playlist.filter((game) => {
+            const filtered = userData.playlist.filter((game) => {
               const searchLower = searchString.toLowerCase();
-              // Match against common game properties
               return game.title?.toLowerCase().includes(searchLower);
             });
             setGamesData(filtered);
           }
+        } else {
+          setGamesData([]);
         }
+      } catch (error) {
+        console.error("Error fetching playlist:", error);
+        setGamesData([]);
       } finally {
         setIsLoading(false);
       }
     },
-    [user],
+    [queryUser],
   );
 
   const queryReviewed = useCallback(async (searchString: string) => {
@@ -119,12 +139,18 @@ export default function Feed() {
       const response = await fetch(`/api/auth/game?title=${searchString}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
-      }).then((res) => {
-        if (res.ok) return res.json();
-        return [];
       });
 
-      setGamesData([...response]);
+      if (response.ok) {
+        const data = await response.json();
+        // Filter for games that have been rated
+        setGamesData(data);
+      } else {
+        setGamesData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching reviewed games:", error);
+      setGamesData([]);
     } finally {
       setIsLoading(false);
     }
@@ -132,21 +158,28 @@ export default function Feed() {
 
   const queryUsers = useCallback(
     async (searchString: string) => {
+      if (!currentUserToken) return;
+
       setIsLoading(true);
       try {
-        searchString = searchString == ".*" ? "" : searchString;
-        const response = await fetch(`/api/users/${searchString}`, {
+        const cleanSearch = searchString === ".*" ? "" : searchString;
+        const response = await fetch(`/api/users/${cleanSearch}`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${currentUserToken}`,
             "Content-Type": "application/json",
           },
-        }).then((res) => {
-          if (res.ok) return res.json();
-          return [];
         });
 
-        setUsersData([...response]);
+        if (response.ok) {
+          const data = await response.json();
+          setUsersData(data);
+        } else {
+          setUsersData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setUsersData([]);
       } finally {
         setIsLoading(false);
       }
@@ -157,15 +190,15 @@ export default function Feed() {
   // Initial user query
   useEffect(() => {
     queryUser();
-  }, []);
+  }, [queryUser]);
 
   // Sync want state with user playlist
   useEffect(() => {
     if (user && gamesData.length > 0) {
       const newWant: Record<string, boolean> = {};
       gamesData.forEach((game) => {
-        const isInPlaylist = user.playlist.some((p) => p._id === game._id);
-        newWant[game._id] = isInPlaylist;
+        const isInPlaylist = user.playlist?.some((p) => p._id === game._id);
+        newWant[game._id] = !!isInPlaylist;
       });
       setWant((w) => ({ ...w, ...newWant }));
     }
@@ -195,21 +228,15 @@ export default function Feed() {
     };
   }, [q]);
 
-  // Handle mode and tab changes with proper state management
+  // Main effect to handle mode, tab, and search changes
   useEffect(() => {
-    const modeChanged = prevModeRef.current !== mode;
-    const tabChanged = prevTabRef.current !== tab;
+    // Update refs
+    prevModeRef.current = mode;
+    prevTabRef.current = tab;
+    prevSearchTermRef.current = searchTerm;
 
-    if (modeChanged) {
-      // Mode changed - reset search and query appropriate data
-      if (mode === "games") {
-        queryGames(searchTerm);
-      } else if (mode === "users") {
-        queryUsers(searchTerm);
-      }
-      prevModeRef.current = mode;
-    } else if (mode === "games" && tabChanged) {
-      // Tab changed in games mode
+    // Determine what query to run
+    if (mode === "games") {
       if (tab === "want") {
         queryPlaylist(searchTerm);
       } else if (tab === "rated") {
@@ -217,7 +244,8 @@ export default function Feed() {
       } else {
         queryGames(searchTerm);
       }
-      prevTabRef.current = tab;
+    } else if (mode === "users") {
+      queryUsers(searchTerm);
     }
   }, [
     mode,
@@ -229,88 +257,75 @@ export default function Feed() {
     queryReviewed,
   ]);
 
-  // Handle search term changes (after debounce)
-  useEffect(() => {
-    // Skip if mode or tab just changed (handled by previous effect)
-    if (prevModeRef.current === mode && prevTabRef.current === tab) {
-      if (mode === "games") {
-        if (tab === "all") {
-          queryGames(searchTerm);
-        } else if (tab === "rated") {
-          queryReviewed(searchTerm);
-        }
-        // "want" tab doesn't use search term
-      } else if (mode === "users") {
-        queryUsers(searchTerm);
-      }
-    }
-  }, [searchTerm]);
-
   // Handle follow/unfollow actions
   useEffect(() => {
-    if (targetUserAction[1] === "follow") {
-      onFollow();
-    } else if (targetUserAction[1] === "unfollow") {
-      onUnfollow();
-    }
-  }, [targetUserAction]);
+    if (!targetUserAction[0] || !targetUserAction[1]) return;
+
+    const performAction = async () => {
+      if (!currentUserToken) return;
+
+      try {
+        const endpoint =
+          targetUserAction[1] === "follow"
+            ? `/api/auth/follow/${targetUserAction[0]}`
+            : `/api/auth/unfollow/${targetUserAction[0]}`;
+
+        await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${currentUserToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        await queryUser();
+      } catch (error) {
+        console.error("Error performing user action:", error);
+      }
+    };
+
+    performAction();
+  }, [targetUserAction, currentUserToken, queryUser]);
 
   // Persist want and ratings to localStorage
   useEffect(() => {
     localStorage.setItem(WANT_KEY, JSON.stringify(want));
   }, [want]);
+
   useEffect(() => {
     localStorage.setItem(RATE_KEY, JSON.stringify(ratings));
   }, [ratings]);
 
   async function toggleWant(id: string) {
-    if (want[id] === false || !want[id]) {
-      await fetch(`/api/auth/watch/${id.trim()}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${currentUserToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-    } else {
-      await fetch(`/api/auth/watch/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${currentUserToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-    }
+    if (!currentUserToken) return;
 
-    setWant((w) => ({ ...w, [id]: !w[id] }));
+    try {
+      if (want[id] === false || !want[id]) {
+        await fetch(`/api/auth/watch/${id.trim()}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${currentUserToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        setWant((w) => ({ ...w, [id]: true }));
+      } else {
+        await fetch(`/api/auth/watch/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${currentUserToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        setWant((w) => ({ ...w, [id]: false }));
+      }
+    } catch (error) {
+      console.error("Error toggling want:", error);
+    }
   }
 
   function rate(id: string, n: number) {
     setRatings((r) => ({ ...r, [id]: n }));
-  }
-
-  async function onFollow() {
-    await fetch(`/api/auth/follow/${targetUserAction[0]}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${currentUserToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    await queryUser();
-  }
-
-  async function onUnfollow() {
-    await fetch(`/api/auth/unfollow/${targetUserAction[0]}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${currentUserToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    await queryUser();
   }
 
   return (
@@ -381,7 +396,6 @@ export default function Feed() {
                 key={g._id}
                 game={g}
                 want={!!want[g._id]}
-                rating={ratings[g._id] || 0}
                 onToggleWant={toggleWant}
                 onRate={rate}
               />
@@ -397,18 +411,18 @@ export default function Feed() {
                 className="rounded-2xl border border-[rgba(30,195,255,0.25)] bg-[rgba(8,25,38,0.6)] p-4"
               >
                 <div className="text-sm text-[#a7e9ff]">User</div>
-                <Link key={u._id} to={`/profile/${encodeURIComponent(u._id)}`}>
+                <Link to={`/profile/${encodeURIComponent(u._id)}`}>
                   <div className="text-lg font-semibold text-white">
                     @{u.username}
                   </div>
                 </Link>
                 <p className="mt-1 text-sm text-gray-300">{u.bio || "—"}</p>
-                {user && user.following.includes(u.username) ? (
+                {user && user.following?.includes(u.username) ? (
                   <button
                     type="button"
                     data-id={u._id}
                     className="mt-3 w-full rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
-                    title="(Mock) Add Friend"
+                    title="Unfollow user"
                     onClick={() => {
                       setTargetUserAction([u._id, "unfollow"]);
                     }}
@@ -419,7 +433,7 @@ export default function Feed() {
                   <button
                     type="button"
                     className="mt-3 w-full rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
-                    title="(Mock) Add Friend"
+                    title="Follow user"
                     onClick={() => {
                       setTargetUserAction([u._id, "follow"]);
                     }}

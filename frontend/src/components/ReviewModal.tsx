@@ -2,15 +2,17 @@ import { useState, type FormEvent } from "react";
 import { auth } from "../lib/auth";
 
 type Props = {
-  hiddenSetter: (v: boolean) => void;     // close the modal when true
-  messageSetter: (msg: string) => void;   // toast/message on parent
+  hiddenSetter: (v: boolean) => void; // close the modal when true
+  messageSetter: (msg: string) => void; // toast/message on parent
   game_id: string;
+  onReviewSubmitted: () => void;
 };
 
 export default function ReviewModal({
   hiddenSetter,
   messageSetter,
   game_id,
+  onReviewSubmitted,
 }: Props) {
   const [ratingState, setRating] = useState<number | "">("");
   const [bodyState, setBody] = useState("");
@@ -38,12 +40,15 @@ export default function ReviewModal({
         }),
       });
 
-      const body = await res.json().catch(() => ({} as any));
+      const body = await res.json().catch(() => ({}) as any);
       if (!res.ok) {
-        throw new Error(body.error || body.message || "Failed to submit review.");
+        throw new Error(
+          body.error || body.message || "Failed to submit review.",
+        );
       }
 
       messageSetter("Review submitted!");
+      onReviewSubmitted(); // notify parent
       hiddenSetter(true); // close modal
     } catch (err: any) {
       messageSetter(err?.message ?? "Something went wrong.");
@@ -63,7 +68,9 @@ export default function ReviewModal({
 
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#1ec3ff]/30 bg-[#071621] p-5 shadow-lg">
-        <h2 className="mb-3 text-lg font-semibold text-white">Write a review</h2>
+        <h2 className="mb-3 text-lg font-semibold text-white">
+          Write a review
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
