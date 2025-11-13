@@ -6,10 +6,9 @@ type Props = {
   game: Game;
   want: boolean;
   onToggleWant: (id: string) => void;
-  onRate: (id: string, n: number) => void;
 };
 
-export default function GameCard({ game, want, onToggleWant, onRate }: Props) {
+export default function GameCard({ game, want, onToggleWant }: Props) {
   const [imgOk, setImgOk] = useState(true);
 
   const accent = "#a78bfa";

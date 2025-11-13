@@ -10,7 +10,6 @@ import { auth } from "../lib/auth";
 
 type Tab = "all" | "want" | "rated";
 const WANT_KEY = "gb_want";
-const RATE_KEY = "gb_ratings";
 const DEBOUNCE_DELAY = 500; // 500ms debounce delay
 
 type UserAction = [target: string, action: string];
@@ -27,19 +26,12 @@ export default function Feed() {
   const currentUserToken = auth.token?.token;
 
   const [searchTerm, setSearchTerm] = useState(".*");
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // persistent wantlist & ratings (for Games mode)
   const [want, setWant] = useState<Record<string, boolean>>(() => {
     try {
       return JSON.parse(localStorage.getItem(WANT_KEY) || "{}");
-    } catch {
-      return {};
-    }
-  });
-  const [ratings, setRatings] = useState<Record<string, number>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(RATE_KEY) || "{}");
     } catch {
       return {};
     }
@@ -114,7 +106,7 @@ export default function Feed() {
             setGamesData([...userData.playlist]);
           } else {
             // Filter games that match the search string
-            const filtered = userData.playlist.filter((game) => {
+            const filtered = userData.playlist.filter((game: Game) => {
               const searchLower = searchString.toLowerCase();
               return game.title?.toLowerCase().includes(searchLower);
             });
@@ -154,7 +146,7 @@ export default function Feed() {
             setGamesData(data);
           } else {
             // Filter games that match the search string
-            const filtered = data.filter((game) => {
+            const filtered = data.filter((game: Game) => {
               const searchLower = searchString.toLowerCase();
               return game.title?.toLowerCase().includes(searchLower);
             });
@@ -308,10 +300,6 @@ export default function Feed() {
     localStorage.setItem(WANT_KEY, JSON.stringify(want));
   }, [want]);
 
-  useEffect(() => {
-    localStorage.setItem(RATE_KEY, JSON.stringify(ratings));
-  }, [ratings]);
-
   async function toggleWant(id: string) {
     if (!currentUserToken) return;
 
@@ -338,10 +326,6 @@ export default function Feed() {
     } catch (error) {
       console.error("Error toggling want:", error);
     }
-  }
-
-  function rate(id: string, n: number) {
-    setRatings((r) => ({ ...r, [id]: n }));
   }
 
   return (
@@ -413,7 +397,6 @@ export default function Feed() {
                 game={g}
                 want={!!want[g._id]}
                 onToggleWant={toggleWant}
-                onRate={rate}
               />
             ))}
           </div>

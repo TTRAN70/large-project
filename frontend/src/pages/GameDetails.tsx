@@ -7,7 +7,6 @@ import ReviewCard from "../components/ReviewCard";
 import { auth } from "../lib/auth";
 
 const WANT_KEY = "gb_want";
-const RATE_KEY = "gb_ratings"; // unified key
 
 type Review = {
   _id: string;
@@ -103,23 +102,9 @@ export default function GameDetails() {
     }
   });
 
-  const [ratings, setRatings] = useState<Record<string, number>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(RATE_KEY) || "{}");
-    } catch {
-      return {};
-    }
-  });
-
   useEffect(() => {
     localStorage.setItem(WANT_KEY, JSON.stringify(want));
   }, [want]);
-
-  useEffect(() => {
-    localStorage.setItem(RATE_KEY, JSON.stringify(ratings));
-  }, [ratings]);
-
-  const rating = ratings[gid] || 0;
 
   async function toggleWant() {
     if (!currentUserToken || !game?._id) return;
@@ -151,10 +136,6 @@ export default function GameDetails() {
     } catch (error) {
       console.error("Error toggling want:", error);
     }
-  }
-
-  function rate(n: number) {
-    setRatings((r) => ({ ...r, [gid]: n }));
   }
 
   // Callback to refresh reviews after posting a new one
