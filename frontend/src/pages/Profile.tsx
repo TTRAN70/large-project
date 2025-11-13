@@ -298,9 +298,6 @@ export default function Profile() {
                       {reviews.map((el : Review) => (
                       <div key={el.id}> {el.game}
                         <ReviewCard user={usernameState} createdAt={el.createdAt} rating={el.rating} body={el.body}></ReviewCard>
-                        <button className="text-red-300 rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10" onClick={() => {
-                          setTarget(el.id);
-                        }}>Delete?</button>
                       </div>
                       ))}
                     </div>
