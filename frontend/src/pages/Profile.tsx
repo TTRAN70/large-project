@@ -7,10 +7,7 @@ import ReviewCard from "../components/ReviewCard.tsx";
 
 type Review = {
   id: string;
-  game: {
-    _id: string;
-    title: string;
-  };
+  game: string;
   rating: number;
   body: string;
   createdAt: string;
@@ -395,17 +392,12 @@ export default function Profile() {
           <h2 className="text-xl font-semibold text-white">Reviews</h2>
           {reviews.map((el) => (
             <div key={el.id} className="space-y-2">
-              <Link
-                to={`/game/${encodeURIComponent(el.game.title)}`}
-                className="text-lg font-medium text-[#a7e9ff] hover:text-[#7bd8ff]"
-              >
-                {el.game.title}
-              </Link>
               <ReviewCard
                 user={usernameState}
                 createdAt={new Date(el.createdAt)}
                 rating={el.rating}
                 body={el.body}
+                game={el.game}
               />
               {isOwnProfile && (
                 <button

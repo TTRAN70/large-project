@@ -290,6 +290,7 @@ export default function GameDetails() {
                 createdAt={new Date(el.createdAt)} // convert to Date here
                 rating={el.rating}
                 body={el.body}
+                game={""}
               />
             ))}
           </div>
