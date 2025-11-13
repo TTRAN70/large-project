@@ -11,8 +11,7 @@ export default function Layout() {
       {/* Background layers */}
       <div className="fixed inset-0 -z-10">
         <div
-          className="absolute inset-0 bg-[url('/background.png')] bg-cover bg-center
-                     [filter:blur(30px)_brightness(0.99)] opacity-100"
+          className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center opacity-100 [filter:blur(30px)_brightness(0.99)]"
           aria-hidden
         />
         <div className="absolute inset-0 bg-[rgba(2,12,24,0.72)]" aria-hidden />

@@ -1,5 +1,5 @@
 // frontend/src/pages/Login.tsx
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link, Navigate } from "react-router-dom";
 import { useState } from "react";
 import { auth } from "../lib/auth";
 
@@ -10,6 +10,12 @@ export default function Login() {
 
   // If user was sent here by Protected, go back there after login; else go to "/"
   const from = location.state?.from?.pathname || "/";
+
+  const token = auth.token;
+  if (token) {
+    // send them to /login and remember where they came from
+    return <Navigate to="/feed" replace />;
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
@@ -38,9 +44,8 @@ export default function Login() {
       }
     });
 
-
     auth.login(res.token, res.user.username);
-    
+
     //send user to either initally desired page, or feed by default
     if (from == "/") {
       nav("/feed");
