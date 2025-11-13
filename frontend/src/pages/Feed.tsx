@@ -179,8 +179,7 @@ export default function Feed() {
 
       setIsLoading(true);
       try {
-        const cleanSearch = searchString === ".*" ? "" : searchString;
-        const response = await fetch(`/api/users/${cleanSearch}`, {
+        const response = await fetch(`/api/users?username=${searchString}`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${currentUserToken}`,
