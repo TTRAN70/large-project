@@ -4,12 +4,13 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const EmailToken = require("../models/Email_token");
 const ResetToken = require("../models/Reset_token"); // make sure this file exists (below)
-const nodemailer = require("nodemailer");
 const { randomBytes } = require("node:crypto");
 const auth = require("../middleware/auth");
 const mongoose = require("mongoose");
 const Review = require("../models/Review");
 const Game = require("../models/Game");
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const FRONTEND_URL =
   process.env.NODE_ENV === "development"
@@ -18,15 +19,6 @@ const FRONTEND_URL =
 
 const isProd = !(process.env.NODE_ENV === "development");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  port: isProd ? 465 : 587, // 465 for secure (SSL), 587 for TLS or dev
-  secure: isProd, // true for port 465 (SSL), false for 587 (TLS)
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 
 // Register
 router.post("/register", async (req, res) => {
@@ -40,7 +32,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Create new user
-    user = new User({ username, email, password });
+    user = new User({ username, email, password, isVerified: true });
     await user.save();
 
     // create email verification token
@@ -53,12 +45,23 @@ router.post("/register", async (req, res) => {
 
     // verification link
     const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
-    await transporter.sendMail({
-      from: `"GameRater" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Verify your email",
-      html: `<p>Hi ${user.username}, verify your email by clicking <a href=${verifyUrl}>this link</a>. Link expires in 1 hour.</p>`,
-    });
+	const msg = {
+	  to: user.email,
+	  from: process.env.SENDGRID_FROM_EMAIL,
+	  subject: "Verify your email",
+	  text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
+	  html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`
+	};
+
+	try {
+	  await sgMail.send(msg);
+	} catch (error) {
+	  console.error("SendGrid send error:", error);
+	}
+	
+
+
+
 
     // Create JWT token
     const token = jwt.sign(
@@ -172,12 +175,19 @@ router.post("/forgot-password", async (req, res) => {
     );
 
     const resetUrl = `${FRONTEND_URL}/reset-password/${etoken}`;
-    await transporter.sendMail({
-      from: `"GameRater" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Password Reset",
-      html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>. Link expires in 1 hour.</p>`,
-    });
+	const msg = {
+	  to: user.email,
+	  from: process.env.SENDGRID_FROM_EMAIL,
+	  subject: "Verify your email",
+	  text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
+	  html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`
+	};
+
+	try {
+	  await sgMail.send(msg);
+	} catch (error) {
+	  console.error("SendGrid send error:", error);
+	}
 
     res.status(200).json({
       message: "If an account exists, a reset link has been sent.",
