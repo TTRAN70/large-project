@@ -12,7 +12,7 @@ type Review = {
   body: string;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
 export default function Profile() {
   const nav = useNavigate();
@@ -33,13 +33,14 @@ export default function Profile() {
   const [reviews, setReviews] = useState([]);
   const [target, setTarget] = useState("");
 
-
-  async function queryReviews(){
-    const res = await fetch(`/api/auth/profile/${isOwnProfile ? currentUser.id : routeUser}/reviews`, {
-      method: "GET",
-    }).then((res) => {
-      if(res.ok)
-        return res.json();
+  async function queryReviews() {
+    const res = await fetch(
+      `/api/auth/profile/${isOwnProfile ? currentUser.id : routeUser}/reviews`,
+      {
+        method: "GET",
+      },
+    ).then((res) => {
+      if (res.ok) return res.json();
     });
 
     setReviews(res.reviews);
@@ -52,7 +53,7 @@ export default function Profile() {
         ? await fetch(`/api/auth/profile/me`, {
             method: "GET",
             headers: {
-              "Authorization": `Bearer ${currentUserToken}`,
+              Authorization: `Bearer ${currentUserToken}`,
               "Content-Type": "application/json",
             },
           }).then((response) => {
@@ -62,7 +63,7 @@ export default function Profile() {
         : await fetch(`/api/auth/profile/${routeUser}`, {
             method: "GET",
             headers: {
-              "Authorization": `Bearer ${currentUserToken}`,
+              Authorization: `Bearer ${currentUserToken}`,
               "Content-Type": "application/json",
             },
           }).then((response) => {
@@ -89,29 +90,28 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
-    if(userData){
+    if (userData) {
       setUsername(userData.username);
       setBio(userData.bio);
       queryReviews();
     }
-  }, [userData])
+  }, [userData]);
 
   useEffect(() => {
-    if(target != "")
-      handleDelete();
+    if (target != "") handleDelete();
   }, [target]);
 
-  async function handleDelete(){
-  //jank way to stall
+  async function handleDelete() {
+    //jank way to stall
     await fetch(`/api/auth/review/${target}`, {
       method: "DELETE",
-      headers:{
-        "Authorization": `Bearer ${currentUserToken}`,
+      headers: {
+        Authorization: `Bearer ${currentUserToken}`,
         "Content-Type": "application/json",
-      },}).then((res) => {
-        if(res.ok)
-          queryReviews();
-      })
+      },
+    }).then((res) => {
+      if (res.ok) queryReviews();
+    });
   }
 
   function onStartEdit() {
@@ -141,7 +141,7 @@ export default function Profile() {
     const res = await fetch(`/api/auth/profile/edit`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${currentUserToken}`,
+        Authorization: `Bearer ${currentUserToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -167,14 +167,16 @@ export default function Profile() {
     // Clear app-local data (extend with friends keys)
     try {
       fetch(`/api/auth/profile/delete`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${currentUserToken}`,
-        "Content-Type": "application/json",
-      }}).then((res) => {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentUserToken}`,
+          "Content-Type": "application/json",
+        },
+      }).then((res) => {
         if (res.ok) {
           auth.logout();
-        }})
+        }
+      });
     } catch {}
 
     // Notify + send to signup
@@ -293,19 +295,26 @@ export default function Profile() {
           </p>
         </div>
       )}
-      {(reviews.length > 0) ? (
-                    <div>
-                      {reviews.map((el : Review) => (
-                      <div key={el.id}> {el.game}
-                        <ReviewCard user={usernameState} createdAt={el.createdAt} rating={el.rating} body={el.body}></ReviewCard>
-                        <button className="text-red-300 rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10" onClick={() => {
-                          setTarget(el.id);
-                        }}>Delete?</button>
-                      </div>
-                      ))}
-                    </div>
-                  ) : (null)}
-      <Link to="/feed" className="rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10">
+      {reviews.length > 0 ? (
+        <div>
+          {reviews.map((el: Review) => (
+            <div key={el.id}>
+              {" "}
+              {el.game}
+              <ReviewCard
+                user={usernameState}
+                createdAt={el.createdAt}
+                rating={el.rating}
+                body={el.body}
+              ></ReviewCard>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <Link
+        to="/feed"
+        className="rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
+      >
         ← Back to Feed
       </Link>
     </section>
