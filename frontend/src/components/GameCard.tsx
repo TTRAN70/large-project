@@ -1,4 +1,3 @@
-// src/components/GameCard.tsx
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { type Game } from "../data/games";

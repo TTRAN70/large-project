@@ -1,4 +1,3 @@
-// src/pages/GameDetails.tsx
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { type Game } from "../data/games";

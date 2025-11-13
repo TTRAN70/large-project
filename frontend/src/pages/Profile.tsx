@@ -1,4 +1,3 @@
-// src/pages/Profile.tsx
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { auth } from "../lib/auth";
