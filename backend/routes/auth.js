@@ -19,7 +19,6 @@ const FRONTEND_URL =
 
 const isProd = !(process.env.NODE_ENV === "development");
 
-
 // Register
 router.post("/register", async (req, res) => {
   try {
@@ -32,7 +31,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Create new user
-    user = new User({ username, email, password, isVerified: true });
+    user = new User({ username, email, password, isVerified: false });
     await user.save();
 
     // create email verification token
@@ -45,23 +44,19 @@ router.post("/register", async (req, res) => {
 
     // verification link
     const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
-	const msg = {
-	  to: user.email,
-	  from: process.env.SENDGRID_FROM_EMAIL,
-	  subject: "Verify your email",
-	  text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
-	  html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`
-	};
+    const msg = {
+      to: user.email,
+      from: process.env.SENDGRID_FROM_EMAIL,
+      subject: "Verify your email",
+      text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
+      html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`,
+    };
 
-	try {
-	  await sgMail.send(msg);
-	} catch (error) {
-	  console.error("SendGrid send error:", error);
-	}
-	
-
-
-
+    try {
+      await sgMail.send(msg);
+    } catch (error) {
+      console.error("SendGrid send error:", error);
+    }
 
     // Create JWT token
     const token = jwt.sign(
@@ -175,19 +170,19 @@ router.post("/forgot-password", async (req, res) => {
     );
 
     const resetUrl = `${FRONTEND_URL}/reset-password/${etoken}`;
-	const msg = {
-	  to: user.email,
-	  from: process.env.SENDGRID_FROM_EMAIL,
-	  subject: "Verify your email",
-	  text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
-	  html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`
-	};
+    const msg = {
+      to: user.email,
+      from: process.env.SENDGRID_FROM_EMAIL,
+      subject: "Verify your email",
+      text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
+      html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`,
+    };
 
-	try {
-	  await sgMail.send(msg);
-	} catch (error) {
-	  console.error("SendGrid send error:", error);
-	}
+    try {
+      await sgMail.send(msg);
+    } catch (error) {
+      console.error("SendGrid send error:", error);
+    }
 
     res.status(200).json({
       message: "If an account exists, a reset link has been sent.",
