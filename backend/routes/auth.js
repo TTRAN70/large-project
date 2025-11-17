@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Create new user
-    user = new User({ username, email, password, isVerified: true });
+    user = new User({ username, email, password });
     await user.save();
 
     // create email verification token
@@ -54,12 +54,22 @@ router.post("/register", async (req, res) => {
 	};
 
 	try {
-	  await sgMail.send(msg);
-	} catch (error) {
-	  console.error("SendGrid send error:", error);
-	}
-	
-
+  await sgMail.send({
+    to: user.email,
+    from: process.env.SENDGRID_FROM_EMAIL,
+    subject: "Verify your GameBox account",
+    html: `
+      <h2>Welcome, ${user.username}!</h2>
+      <p>Click the link below to verify your account:</p>
+      <a href="${verifyUrl}">${verifyUrl}</a>
+      <p>If you didn’t request this, please ignore this email. The link will expire in one hour</p>
+    `
+  });
+  console.log("Verification email sent to", user.email);
+} catch (err) {
+  console.error("SendGrid error:", err);
+  if (err.response) console.error(err.response.body);
+}
 
 
 
@@ -795,5 +805,6 @@ router.get("/review/:id", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 module.exports = router;
