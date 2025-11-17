@@ -2,7 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_URL = "http://10.0.2.2:3000/api/auth";
+const API_URL = "https://pcm-pro.net/api/auth";
 console.log('USING API_URL =>', API_URL);
 
 const api = axios.create({

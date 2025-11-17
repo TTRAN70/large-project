@@ -1,9 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useState } from "react";
+import { auth } from "../lib/auth";
 
 export default function Signup() {
   const [error, setError] = useState("");
   const [msgState, setMsgState] = useState(true);
+
+  const token = auth.token;
+  if (token) {
+    // send them to /login and remember where they came from
+    return <Navigate to="/feed" replace />;
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();

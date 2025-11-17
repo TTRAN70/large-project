@@ -1,5 +1,4 @@
-// src/pages/Profile.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { auth } from "../lib/auth";
 import { jwtDecode } from "jwt-decode";
@@ -10,176 +9,264 @@ type Review = {
   game: string;
   rating: number;
   body: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+  createdAt: string;
+  updatedAt: string;
+};
+
+type UserData = {
+  _id: string;
+  username: string;
+  bio: string;
+  playlist: any[];
+  following: string[];
+  reviews?: Review[];
+};
 
 export default function Profile() {
   const nav = useNavigate();
   const { id: routeUser } = useParams<{ id: string }>();
 
-  const currentUserToken: any = auth.token?.token; // whoever is logged in
+  const currentUserToken = auth.token?.token;
   const currentUser: any = currentUserToken
     ? jwtDecode(currentUserToken)
     : null;
-  const isOwnProfile = currentUser.id ? routeUser == currentUser.id : false;
+  const isOwnProfile =
+    currentUser?.id && routeUser ? routeUser === currentUser.id : false;
 
   // Local state mirrors current user for editing
-  const [userData, setUserData] = useState<any | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [usernameState, setUsername] = useState("");
   const [bioState, setBio] = useState("");
   const [message, setMessage] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [reviews, setReviews] = useState([]);
-  const [target, setTarget] = useState("");
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
+  const queryReviews = useCallback(async () => {
+    if (!currentUserToken) return;
 
-  async function queryReviews(){
-    const res = await fetch(`/api/auth/profile/${isOwnProfile ? currentUser.id : routeUser}/reviews`, {
-      method: "GET",
-    }).then((res) => {
-      if(res.ok)
-        return res.json();
-    });
+    const targetId = isOwnProfile ? currentUser.id : routeUser;
+    if (!targetId) return;
 
-    setReviews(res.reviews);
-  }
+    setIsLoadingReviews(true);
+    try {
+      const res = await fetch(`/api/auth/profile/${targetId}/reviews`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${currentUserToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-  // Keep fields in sync if user updates elsewhere
-  useEffect(() => {
-    async function fetchUserData() {
-      const res = isOwnProfile
-        ? await fetch(`/api/auth/profile/me`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${currentUserToken}`,
-              "Content-Type": "application/json",
-            },
-          }).then((response) => {
-            if (response.ok) return response.json();
-            else return "no user found";
-          })
-        : await fetch(`/api/auth/profile/${routeUser}`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${currentUserToken}`,
-              "Content-Type": "application/json",
-            },
-          }).then((response) => {
-            if (response.ok) return response.json();
-            else return "no user found";
-          });
+      if (res.ok) {
+        const data = await res.json();
+        setReviews(Array.isArray(data.reviews) ? data.reviews : []);
+      } else {
+        setReviews([]);
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      setReviews([]);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  }, [currentUserToken, isOwnProfile, currentUser?.id, routeUser]);
 
-      setUserData(res);
+  const fetchUserData = useCallback(async () => {
+    if (!currentUserToken) {
+      setIsLoadingUser(false);
       return;
     }
 
-    fetchUserData();
+    setIsLoadingUser(true);
+    try {
+      const endpoint = isOwnProfile
+        ? `/api/auth/profile/me`
+        : `/api/auth/profile/${routeUser}`;
 
+      const res = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${currentUserToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUserData(data);
+        setUsername(data.username || "");
+        setBio(data.bio || "");
+      } else {
+        setUserData(null);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      setUserData(null);
+    } finally {
+      setIsLoadingUser(false);
+    }
+  }, [currentUserToken, isOwnProfile, routeUser]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  // Fetch reviews when userData is loaded
+  useEffect(() => {
+    if (userData) {
+      queryReviews();
+    }
+  }, [userData, queryReviews]);
+
+  // Listen for auth changes
+  useEffect(() => {
     const sync = () => {
       const userEncrypted = auth.token?.token;
       if (!userEncrypted) return;
-      else {
+      try {
         const user: any = jwtDecode(userEncrypted);
-        setUsername(user.username);
+        setUsername(user.username || "");
+      } catch (error) {
+        console.error("Error decoding token:", error);
       }
     };
     window.addEventListener("auth:change", sync);
     return () => window.removeEventListener("auth:change", sync);
   }, []);
 
-  useEffect(() => {
-    if(userData){
-      setUsername(userData.username);
-      setBio(userData.bio);
-      queryReviews();
+  async function handleDelete(reviewId: string) {
+    if (!currentUserToken) return;
+
+    try {
+      const res = await fetch(`/api/auth/review/${reviewId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${currentUserToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.ok) {
+        // Refresh reviews after successful deletion
+        queryReviews();
+      }
+    } catch (error) {
+      console.error("Error deleting review:", error);
     }
-  }, [userData])
-
-  useEffect(() => {
-    if(target != "")
-      handleDelete();
-  }, [target]);
-
-  async function handleDelete(){
-  //jank way to stall
-    await fetch(`/api/auth/review/${target}`, {
-      method: "DELETE",
-      headers:{
-        "Authorization": `Bearer ${currentUserToken}`,
-        "Content-Type": "application/json",
-      },}).then((res) => {
-        if(res.ok)
-          queryReviews();
-      })
   }
 
   function onStartEdit() {
     // reset to latest saved values when entering edit
-    setUsername(currentUser.username || "");
-    setBio(currentUser.bio || "");
+    setUsername(userData?.username || "");
+    setBio(userData?.bio || "");
     setIsEditing(true);
   }
 
   function onCancel() {
     // discard edits and return to view mode
-
-    setUsername(currentUser.username || "");
-    setBio(currentUser.bio || "");
+    setUsername(userData?.username || "");
+    setBio(userData?.bio || "");
     setIsEditing(false);
     setMessage("");
   }
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!currentUserToken) return;
+
     const name = usernameState.trim();
     if (!name) {
       setMessage("Username cannot be empty.");
       return;
     }
 
-    const res = await fetch(`/api/auth/profile/edit`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${currentUserToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: name,
-        bio: bioState,
-      }),
-    });
-    if (res.ok) {
-      auth.setUsername(name);
-      setMessage("Profile updated ✓");
-    } else setMessage("Uh oh. Something went wrong :(");
+    try {
+      const res = await fetch(`/api/auth/profile/edit`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentUserToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: name,
+          bio: bioState,
+        }),
+      });
 
-    // briefly show message, then exit edit mode
-    setTimeout(() => {
-      setMessage("");
-      setIsEditing(false);
-    }, 900);
+      if (res.ok) {
+        auth.setUsername(name);
+        setMessage("Profile updated ✓");
+
+        // Update local userData to reflect changes
+        setUserData((prev) =>
+          prev ? { ...prev, username: name, bio: bioState } : null,
+        );
+
+        // briefly show message, then exit edit mode
+        setTimeout(() => {
+          setMessage("");
+          setIsEditing(false);
+        }, 900);
+      } else {
+        setMessage("Uh oh. Something went wrong :(");
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      setMessage("Uh oh. Something went wrong :(");
+    }
   }
 
-  function onDelete() {
+  async function onDelete() {
     if (!confirm("Delete your account? This will clear all your data.")) return;
+    if (!currentUserToken) return;
 
-    // Clear app-local data (extend with friends keys)
     try {
-      fetch(`/api/auth/profile/delete`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${currentUserToken}`,
-        "Content-Type": "application/json",
-      }}).then((res) => {
-        if (res.ok) {
-          auth.logout();
-        }})
-    } catch {}
+      const res = await fetch(`/api/auth/profile/delete`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentUserToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    // Notify + send to signup
-    window.dispatchEvent(new Event("auth:change"));
-    nav("/login", { replace: true });
+      if (res.ok) {
+        auth.logout();
+        window.dispatchEvent(new Event("auth:change"));
+        nav("/login", { replace: true });
+      }
+    } catch (error) {
+      console.error("Error deleting account:", error);
+    }
+  }
+
+  if (isLoadingUser) {
+    return (
+      <section className="space-y-6">
+        <div className="max-w-xl rounded-2xl border border-[#1ec3ff]/30 bg-white/5 p-5 backdrop-blur">
+          <p className="text-gray-300">Loading profile...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!userData && !isLoadingUser) {
+    return (
+      <section className="space-y-6">
+        <div className="max-w-xl rounded-2xl border border-[#1ec3ff]/30 bg-white/5 p-5 backdrop-blur">
+          <h1 className="text-2xl font-semibold text-white">User not found</h1>
+          <p className="mt-2 text-gray-300">This user doesn't exist.</p>
+        </div>
+        <Link
+          to="/feed"
+          className="inline-block rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
+        >
+          ← Back to Feed
+        </Link>
+      </section>
+    );
   }
 
   return (
@@ -293,19 +380,45 @@ export default function Profile() {
           </p>
         </div>
       )}
-      {(reviews.length > 0) ? (
-                    <div>
-                      {reviews.map((el : Review) => (
-                      <div key={el.id}> {el.game}
-                        <ReviewCard user={usernameState} createdAt={el.createdAt} rating={el.rating} body={el.body}></ReviewCard>
-                        <button className="text-red-300 rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-sm text-[#a7e9ff] hover:bg-[#1ec3ff]/10" onClick={() => {
-                          setTarget(el.id);
-                        }}>Delete?</button>
-                      </div>
-                      ))}
-                    </div>
-                  ) : (null)}
-      <Link to="/feed" className="rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10">
+
+      {/* Reviews section */}
+      {isLoadingReviews ? (
+        <div className="max-w-xl">
+          <p className="text-gray-300">Loading reviews...</p>
+        </div>
+      ) : reviews.length > 0 ? (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-white">Reviews</h2>
+          {reviews.map((el) => (
+            <div key={el.id} className="space-y-2">
+              <ReviewCard
+                user={usernameState}
+                createdAt={new Date(el.createdAt)}
+                rating={el.rating}
+                body={el.body}
+                game={el.game}
+              />
+              {isOwnProfile && (
+                <button
+                  onClick={() => handleDelete(el.id)}
+                  className="rounded-lg border border-red-500/40 px-3 py-1.5 text-sm text-red-200 hover:bg-red-500/10"
+                >
+                  Delete Review
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="max-w-xl rounded-2xl border border-[#1ec3ff]/20 bg-[#061a27]/70 p-5">
+          <p className="text-center text-[#a7e9ff]">No reviews yet.</p>
+        </div>
+      )}
+
+      <Link
+        to="/feed"
+        className="inline-block rounded-lg border border-[#1ec3ff]/40 px-3 py-1.5 text-[#a7e9ff] hover:bg-[#1ec3ff]/10"
+      >
         ← Back to Feed
       </Link>
     </section>

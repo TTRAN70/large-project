@@ -17,9 +17,6 @@ const FRONTEND_URL =
     ? process.env.FRONTEND_DEV_URI
     : process.env.FRONTEND_URL;
 
-const isProd = !(process.env.NODE_ENV === "development");
-
-
 // Register
 router.post("/register", async (req, res) => {
   try {
@@ -32,7 +29,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Create new user
-    user = new User({ username, email, password });
+    user = new User({ username, email, password, isVerified: false });
     await user.save();
 
     // create email verification token
@@ -45,31 +42,26 @@ router.post("/register", async (req, res) => {
 
     // verification link
     const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
-	const msg = {
-	  to: user.email,
-	  from: process.env.SENDGRID_FROM_EMAIL,
-	  subject: "Verify your email",
-	  text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
-	  html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`
-	};
 
-	try {
-  await sgMail.send({
-    to: user.email,
-    from: process.env.SENDGRID_FROM_EMAIL,
-    subject: "Verify your GameBox account",
-    html: `
-      <h2>Welcome, ${user.username}!</h2>
-      <p>Click the link below to verify your account:</p>
-      <a href="${verifyUrl}">${verifyUrl}</a>
-      <p>If you didn’t request this, please ignore this email. The link will expire in one hour</p>
-    `
-  });
-  console.log("Verification email sent to", user.email);
-} catch (err) {
-  console.error("SendGrid error:", err);
-  if (err.response) console.error(err.response.body);
-}
+    const msg = {
+      to: user.email,
+      from: process.env.SENDGRID_FROM_EMAIL,
+      subject: "Verify your GameBox account",
+      html: `
+        <h2>Welcome, ${user.username}!</h2>
+        <p>Click the link below to verify your account:</p>
+        <a href="${verifyUrl}">${verifyUrl}</a>
+        <p>If you didn’t request this, please ignore this email. The link will expire in one hour.</p>
+      `
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log("Verification email sent to", user.email);
+    } catch (err) {
+      console.error("SendGrid error:", err);
+      if (err.response) console.error(err.response.body);
+    }
 
 
 
@@ -185,19 +177,19 @@ router.post("/forgot-password", async (req, res) => {
     );
 
     const resetUrl = `${FRONTEND_URL}/reset-password/${etoken}`;
-	const msg = {
-	  to: user.email,
-	  from: process.env.SENDGRID_FROM_EMAIL,
-	  subject: "Verify your email",
-	  text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
-	  html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`
-	};
+    const msg = {
+      to: user.email,
+      from: process.env.SENDGRID_FROM_EMAIL,
+      subject: "Reset your password",
+      text: `Hi ${user.username}, reset your password here: ${resetUrl}`,
+      html: `<p>Hi ${user.username}, reset your password by clicking <a href="${resetUrl}">this link</a>. Link expires in 1 hour.</p>`,
+    };
 
-	try {
-	  await sgMail.send(msg);
-	} catch (error) {
-	  console.error("SendGrid send error:", error);
-	}
+    try {
+      await sgMail.send(msg);
+    } catch (error) {
+      console.error("SendGrid send error:", error);
+    }
 
     res.status(200).json({
       message: "If an account exists, a reset link has been sent.",
@@ -453,7 +445,6 @@ router.get("/profile/:id/reviews", async (req, res) => {
       user: user.username,
       reviews: formatted, // empty array if no reviews
     });
-
   } catch (error) {
     console.error("Error fetching user reviews:", error.message);
     res.status(500).json({ error: "Server error" });
@@ -790,7 +781,7 @@ router.get("/review/:id", async (req, res) => {
     }
 
     // get the reviewer's username // get the game title
-    const reviews = await Review.find({game: gameId})
+    const reviews = await Review.find({ game: gameId })
       .populate("user", "username")
       .populate("game", "title")
       .lean();
@@ -806,5 +797,35 @@ router.get("/review/:id", async (req, res) => {
   }
 });
 
+// GET all games reviewed by a specific user
+router.get("/games/reviewed", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    // Find all reviews by this user
+    const reviews = await Review.find({ user: userId }).lean();
+
+    if (reviews.length === 0) {
+      return res.status(404).json({ error: "No reviews found for this user" });
+    }
+
+    // Extract unique game IDs from reviews
+    const gameIds = [
+      ...new Set(reviews.map((review) => review.game.toString())),
+    ];
+
+    // Fetch all games that match these IDs
+    const games = await Game.find({ _id: { $in: gameIds } }).lean();
+
+    res.json(games);
+  } catch (error) {
+    console.error("Error fetching user's reviewed games:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 module.exports = router;
