@@ -42,19 +42,28 @@ router.post("/register", async (req, res) => {
 
     // verification link
     const verifyUrl = `${FRONTEND_URL}/verify/${etoken}`;
+
     const msg = {
       to: user.email,
       from: process.env.SENDGRID_FROM_EMAIL,
-      subject: "Verify your email",
-      text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
-      html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`,
+      subject: "Verify your GameBox account",
+      html: `
+        <h2>Welcome, ${user.username}!</h2>
+        <p>Click the link below to verify your account:</p>
+        <a href="${verifyUrl}">${verifyUrl}</a>
+        <p>If you didn’t request this, please ignore this email. The link will expire in one hour.</p>
+      `
     };
 
     try {
       await sgMail.send(msg);
-    } catch (error) {
-      console.error("SendGrid send error:", error);
+      console.log("Verification email sent to", user.email);
+    } catch (err) {
+      console.error("SendGrid error:", err);
+      if (err.response) console.error(err.response.body);
     }
+
+
 
     // Create JWT token
     const token = jwt.sign(
