@@ -171,9 +171,9 @@ router.post("/forgot-password", async (req, res) => {
     const msg = {
       to: user.email,
       from: process.env.SENDGRID_FROM_EMAIL,
-      subject: "Verify your email",
-      text: `Hi ${user.username}, verify your email here: ${verifyUrl}`,
-      html: `<p>Hi ${user.username}, verify your email by clicking <a href="${verifyUrl}">this link</a>. Link expires in 1 hour.</p>`,
+      subject: "Reset your password",
+      text: `Hi ${user.username}, reset your password here: ${resetUrl}`,
+      html: `<p>Hi ${user.username}, reset your password by clicking <a href="${resetUrl}">this link</a>. Link expires in 1 hour.</p>`,
     };
 
     try {
