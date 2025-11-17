@@ -17,8 +17,6 @@ const FRONTEND_URL =
     ? process.env.FRONTEND_DEV_URI
     : process.env.FRONTEND_URL;
 
-const isProd = !(process.env.NODE_ENV === "development");
-
 // Register
 router.post("/register", async (req, res) => {
   try {
