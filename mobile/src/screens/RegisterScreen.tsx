@@ -11,7 +11,7 @@ export default function RegisterScreen({ navigation }: any) {
   async function handleRegister() {
     try {
       await register(username, email, password);
-      Alert.alert("Success", "Account created successfully!");
+      Alert.alert("Account created successfully!", "Please check your email and verify your account before logging in.");
       navigation.navigate("Login");
     } catch (err: any) {
       Alert.alert("Register Error", err?.response?.data?.error || "Something went wrong");

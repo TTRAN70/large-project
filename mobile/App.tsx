@@ -9,6 +9,7 @@ import HomeScreen from "./src/screens/HomeScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import GameSearchScreen from "./src/screens/GameSearchScreen";
 import GameDetailScreen from "./src/screens/GameDetailScreen";
+import UserListScreen from "./src/screens/UserListScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -28,31 +29,16 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute}>
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} />
 
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
 
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Users" component={UserListScreen} options={{ title: "Users" }} />
 
-        <Stack.Screen
-          name="GameSearch"
-          component={GameSearchScreen}
-          options={{ title: "Game Search" }}
-        />
-
-        {/* The REAL working screen */}
+        <Stack.Screen name="GameSearch" component={GameSearchScreen} options={{ title: "Game Search" }} />
         <Stack.Screen name="GameDetail" component={GameDetailScreen} />
-
       </Stack.Navigator>
     </NavigationContainer>
   );

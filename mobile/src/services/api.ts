@@ -15,6 +15,16 @@ export const api = {
     return res.data;
   },
 
+  async updateProfile(username: string, bio: string) {
+    const headers = await authHeader();
+    const res = await axios.post(
+      `${API_URL}/auth/profile/edit`,
+      { username, bio },
+      { headers }
+    );
+    return res.data;
+  },
+
   async searchGames(title: string) {
     const res = await axios.get(`${API_URL}/auth/game`, {
       params: { title },
@@ -24,25 +34,24 @@ export const api = {
 
   async gameReviews(gameId: string) {
     const res = await axios.get(`${API_URL}/auth/review/${gameId}`);
-    return res.data; // array of reviews
+    return res.data;
   },
 
   async saveReview(gameId: string, rating: number, body: string) {
     const headers = await authHeader();
+    const me = await api.me();
 
-    // Get all reviews for this game
     let all = [];
     try {
       all = await api.gameReviews(gameId);
       if (!Array.isArray(all)) all = [];
-    } catch {}
+    } catch {
+      all = [];
+    }
 
-    const me = await api.me();
-
-    const mine = all.find((r) => r.user?.username === me.username);
+    const mine = all.find((r: any) => r.user?.username === me.username);
 
     if (mine) {
-      // update
       const res = await axios.put(
         `${API_URL}/auth/review/${mine._id}`,
         { rating, body },
@@ -51,7 +60,6 @@ export const api = {
       return res.data;
     }
 
-    // create
     const res = await axios.post(
       `${API_URL}/auth/review`,
       { gameId, rating, body },
@@ -59,4 +67,36 @@ export const api = {
     );
     return res.data;
   },
+
+  async getAllUsers() {
+    const res = await axios.get(`${API_URL}/users`);
+    return res.data;
+  },
+
+  async follow(id: string) {
+    const headers = await authHeader();
+    const res = await axios.post(
+      `${API_URL}/auth/follow/${id}`,
+      {},
+      { headers }
+    );
+    return res.data;
+  },
+
+  async unfollow(id: string) {
+    const headers = await authHeader();
+    const res = await axios.post(
+      `${API_URL}/auth/unfollow/${id}`,
+      {},
+      { headers }
+    );
+    return res.data;
+  },
+
+  async deleteAccount() {
+    const headers = await authHeader();
+    const res = await axios.post(`${API_URL}/auth/profile/delete`, {}, { headers });
+    return res.data;
+  }
+
 };
